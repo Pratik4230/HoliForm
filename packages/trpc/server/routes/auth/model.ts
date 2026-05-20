@@ -8,4 +8,5 @@ export const createUserWithEmailAndPasswordInputModel = z.object({
 
 export const createUserWithEmailAndPasswordOutputModel = z.object({
   id: z.string().describe("The id of the user created"),
+  token: z.string().describe("The JWT token of the user"),
 });

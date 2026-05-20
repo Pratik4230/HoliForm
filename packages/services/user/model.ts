@@ -9,3 +9,9 @@ export const createUserWithEmailAndPasswordInput = z.object({
 export type CreateUserWithEmailAndPasswordInput = z.infer<
   typeof createUserWithEmailAndPasswordInput
 >;
+
+export const generateJWTTokenInput = z.object({
+  id: z.string().describe("The id of the user"),
+});
+
+export type GenerateJWTTokenInput = z.infer<typeof generateJWTTokenInput>;

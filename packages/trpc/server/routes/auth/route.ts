@@ -1,5 +1,6 @@
 import { userService } from "../../services";
 import { publicProcedure, router } from "../../trpc";
+import { setAutheticationCookie } from "../../utils/cookie";
 import { generatePath } from "../../utils/path-generator";
 import {
   createUserWithEmailAndPasswordInputModel,
@@ -20,13 +21,16 @@ export const authRouter = router({
     })
     .input(createUserWithEmailAndPasswordInputModel)
     .output(createUserWithEmailAndPasswordOutputModel)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { fullName, email, password } = input;
-      const { id } = await userService.createUserWithEmailAndPassword({
+      const { id, token } = await userService.createUserWithEmailAndPassword({
         fullName,
         email,
         password,
       });
-      return { id };
+
+      setAutheticationCookie(ctx, token);
+
+      return { id, token };
     }),
 });
