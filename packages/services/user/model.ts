@@ -15,3 +15,12 @@ export const generateJWTTokenInput = z.object({
 });
 
 export type GenerateJWTTokenInput = z.infer<typeof generateJWTTokenInput>;
+
+export const signInUserWithEmailAndPasswordInput = z.object({
+  email: z.email().describe("The email of the user"),
+  password: z.string().min(8).describe("The password of the user"),
+});
+
+export type SignInUserWithEmailAndPasswordInputType = z.infer<
+  typeof signInUserWithEmailAndPasswordInput
+>;
