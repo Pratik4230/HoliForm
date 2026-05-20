@@ -20,3 +20,12 @@ export const signInUserWithEmailAndPasswordOutputModel = z.object({
   id: z.string().describe("The id of the signed in user"),
   token: z.string().describe("The JWT token of the user"),
 });
+
+export const getLoggedInUserInfoInputModel = z.undefined();
+
+export const getLoggedInUserInfoOutputModel = z.object({
+  id: z.string().describe("Id of User"),
+  email: z.email().describe("Email of User"),
+  fullName: z.string().describe("Full name of user"),
+  profileImageUrl: z.string().describe("Profile image user of user").optional().nullable(),
+});
