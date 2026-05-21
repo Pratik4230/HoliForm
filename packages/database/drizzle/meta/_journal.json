@@ -8,6 +8,20 @@
       "when": 1779200696194,
       "tag": "0000_talented_roulette",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779376898810,
+      "tag": "0001_charming_captain_stacy",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779378508645,
+      "tag": "0002_tired_tinkerer",
+      "breakpoints": true
     }
   ]
 }
