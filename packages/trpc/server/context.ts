@@ -7,6 +7,17 @@ export interface TRPCContext {
   clearCookie: ReturnType<typeof clearCookieFactory>;
 }
 
+export type AuthenticatedUser = {
+  id: string;
+  email: string;
+  fullName: string;
+  profileImageUrl: string | null;
+};
+
+export type AuthenticatedTRPCContext = TRPCContext & {
+  user: AuthenticatedUser;
+};
+
 export async function createContext({
   req,
   res,

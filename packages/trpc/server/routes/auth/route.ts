@@ -1,7 +1,10 @@
-import { userService } from "../../services";
-import { publicProcedure, router } from "../../trpc";
-import { getAutheticationCookie, setAutheticationCookie } from "../../utils/cookie";
+import { publicProcedure, protectedProcedure, router } from "../../trpc";
+import {
+  clearAutheticationCookie,
+  setAutheticationCookie,
+} from "../../utils/cookie";
 import { generatePath } from "../../utils/path-generator";
+import { userService } from "../../services";
 import {
   createUserWithEmailAndPasswordInputModel,
   createUserWithEmailAndPasswordOutputModel,
@@ -9,6 +12,8 @@ import {
   getLoggedInUserInfoOutputModel,
   signInUserWithEmailAndPasswordInputModel,
   signInUserWithEmailAndPasswordOutputModel,
+  signOutInputModel,
+  signOutOutputModel,
 } from "./model";
 
 const TAGS = ["Authentication"];
@@ -61,7 +66,7 @@ export const authRouter = router({
       return { id, token };
     }),
 
-  getLoggedInUserInfo: publicProcedure
+  getLoggedInUserInfo: protectedProcedure
     .meta({
       openapi: {
         method: "GET",
@@ -72,12 +77,22 @@ export const authRouter = router({
     .input(getLoggedInUserInfoInputModel)
     .output(getLoggedInUserInfoOutputModel)
     .query(async ({ ctx }) => {
-      const userToken = getAutheticationCookie(ctx);
-      if (!userToken) throw new Error("user is not logged in");
-
-      const { id, email, fullName, profileImageUrl } =
-        await userService.verifyAndDecodeToken(userToken);
-
+      const { id, email, fullName, profileImageUrl } = ctx.user;
       return { id, email, fullName, profileImageUrl };
+    }),
+
+  signOut: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/signOut"),
+        tags: TAGS,
+      },
+    })
+    .input(signOutInputModel)
+    .output(signOutOutputModel)
+    .mutation(async ({ ctx }) => {
+      clearAutheticationCookie(ctx);
+      return { success: true };
     }),
 });
