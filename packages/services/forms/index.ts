@@ -1,6 +1,10 @@
-import { and, db, eq } from "@repo/database";
+import { and, db, desc, eq } from "@repo/database";
 import { formsTable } from "@repo/database/models/form";
-import { createFormInput, type CreateFormInput, type FormRecordOutput } from "./model";
+import {
+  createFormInputModel,
+  type CreateFormInput,
+  type FormRecord,
+} from "@repo/validators/forms";
 
 function slugify(value: string): string {
   const slug = value
@@ -37,7 +41,7 @@ class FormService {
     return slug;
   }
 
-  private mapFormRecord(row: typeof formsTable.$inferSelect): FormRecordOutput {
+  private mapFormRecord(row: typeof formsTable.$inferSelect): FormRecord {
     return {
       id: row.id,
       userId: row.userId,
@@ -54,9 +58,9 @@ class FormService {
     };
   }
 
-  public async createForm(userId: string, payload: CreateFormInput): Promise<FormRecordOutput> {
+  public async createForm(userId: string, payload: CreateFormInput): Promise<FormRecord> {
     const { title, description, slug: slugInput, themeId } =
-      await createFormInput.parseAsync(payload);
+      await createFormInputModel.parseAsync(payload);
 
     const baseSlug = slugify(slugInput ?? title);
 
@@ -85,6 +89,16 @@ class FormService {
     }
 
     return this.mapFormRecord(form);
+  }
+
+  public async listForms(userId: string): Promise<FormRecord[]> {
+    const rows = await db
+      .select()
+      .from(formsTable)
+      .where(eq(formsTable.userId, userId))
+      .orderBy(desc(formsTable.createdAt));
+
+    return rows.map((row) => this.mapFormRecord(row));
   }
 }
 

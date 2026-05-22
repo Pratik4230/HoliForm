@@ -3,7 +3,12 @@ import { TRPCError } from "@trpc/server";
 import { formService } from "../../services";
 import { protectedProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
-import { createFormInputModel, createFormOutputModel } from "./model";
+import {
+  createFormInputModel,
+  formRecordOutputModel,
+  listFormsInputModel,
+  listFormsOutputModel,
+} from "@repo/validators/forms";
 
 const TAGS = ["Forms"];
 const getPath = generatePath("/forms");
@@ -18,7 +23,7 @@ export const formsRouter = router({
       },
     })
     .input(createFormInputModel)
-    .output(createFormOutputModel)
+    .output(formRecordOutputModel)
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.createForm(ctx.user.id, input);
@@ -34,5 +39,19 @@ export const formsRouter = router({
         }
         throw error;
       }
+    }),
+
+  listForms: protectedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/listForms"),
+        tags: TAGS,
+      },
+    })
+    .input(listFormsInputModel)
+    .output(listFormsOutputModel)
+    .query(async ({ ctx }) => {
+      return await formService.listForms(ctx.user.id);
     }),
 });

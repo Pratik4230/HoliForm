@@ -7,7 +7,9 @@ export const createFormInputModel = z.object({
   themeId: z.string().max(64).optional().describe("Preset theme id"),
 });
 
-export const createFormOutputModel = z.object({
+export type CreateFormInput = z.infer<typeof createFormInputModel>;
+
+export const formRecordOutputModel = z.object({
   id: z.uuid().describe("Form id"),
   userId: z.uuid().describe("Owner user id"),
   title: z.string().describe("Form title"),
@@ -21,3 +23,13 @@ export const createFormOutputModel = z.object({
   createdAt: z.coerce.date().nullable().describe("Created at"),
   updatedAt: z.coerce.date().nullable().describe("Updated at"),
 });
+
+export type FormRecord = z.infer<typeof formRecordOutputModel>;
+
+export const listFormsInputModel = z.undefined();
+
+export const listFormsOutputModel = z
+  .array(formRecordOutputModel)
+  .describe("Forms owned by the logged-in user, newest first");
+
+export type ListFormsOutput = z.infer<typeof listFormsOutputModel>;

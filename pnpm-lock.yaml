@@ -172,6 +172,9 @@ importers:
       '@repo/trpc':
         specifier: workspace:*
         version: link:../../packages/trpc
+      '@repo/validators':
+        specifier: workspace:*
+        version: link:../../packages/validators
       '@t3-oss/env-nextjs':
         specifier: ^0.13.10
         version: 0.13.10(typescript@5.9.2)(zod@4.3.5)
@@ -376,6 +379,9 @@ importers:
       '@repo/logger':
         specifier: workspace:*
         version: link:../logger
+      '@repo/validators':
+        specifier: workspace:*
+        version: link:../validators
       google-auth-library:
         specifier: ^10.5.0
         version: 10.5.0
@@ -410,6 +416,9 @@ importers:
       '@repo/services':
         specifier: workspace:*
         version: link:../services
+      '@repo/validators':
+        specifier: workspace:*
+        version: link:../validators
       '@trpc/client':
         specifier: ^11.8.1
         version: 11.8.1(@trpc/server@11.8.1(typescript@5.9.3))(typescript@5.9.3)
@@ -446,6 +455,22 @@ importers:
         version: 5.9.3
 
   packages/typescript-config: {}
+
+  packages/validators:
+    dependencies:
+      zod:
+        specifier: ^4.3.5
+        version: 4.3.5
+    devDependencies:
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
 packages:
 

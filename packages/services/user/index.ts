@@ -3,13 +3,13 @@ import * as JWT from "jsonwebtoken";
 import { db, eq } from "@repo/database";
 import { usersTable } from "@repo/database/models/user";
 import {
-  createUserWithEmailAndPasswordInput,
-  generateJWTTokenInput,
-  GenerateJWTTokenInput,
-  signInUserWithEmailAndPasswordInput,
-  SignInUserWithEmailAndPasswordInputType,
+  createUserWithEmailAndPasswordInputModel,
+  generateJWTTokenInputModel,
   type CreateUserWithEmailAndPasswordInput,
-} from "./model";
+  type GenerateJWTTokenInput,
+  signInUserWithEmailAndPasswordInputModel,
+  type SignInUserWithEmailAndPasswordInput,
+} from "@repo/validators/auth";
 import { env } from "../env";
 
 class UserService {
@@ -19,7 +19,7 @@ class UserService {
   }
 
   private async generateJWTToken(payload: GenerateJWTTokenInput) {
-    const { id } = await generateJWTTokenInput.parseAsync(payload);
+    const { id } = await generateJWTTokenInputModel.parseAsync(payload);
     const token = JWT.sign({ id }, env.JWT_SECRET);
     return { token };
   }
@@ -56,7 +56,7 @@ class UserService {
   }
   public async createUserWithEmailAndPassword(payload: CreateUserWithEmailAndPasswordInput) {
     const { fullName, email, password } =
-      await createUserWithEmailAndPasswordInput.parseAsync(payload);
+      await createUserWithEmailAndPasswordInputModel.parseAsync(payload);
 
     // check is user exists by email
     const isUserExists = await this.getUserByEmail(email);
@@ -88,8 +88,9 @@ class UserService {
     };
   }
 
-  public async signInUserWithEmailAndPassword(payload: SignInUserWithEmailAndPasswordInputType) {
-    const { email, password } = await signInUserWithEmailAndPasswordInput.parseAsync(payload);
+  public async signInUserWithEmailAndPassword(payload: SignInUserWithEmailAndPasswordInput) {
+    const { email, password } =
+      await signInUserWithEmailAndPasswordInputModel.parseAsync(payload);
 
     const existingUser = await this.getUserByEmail(email);
     if (!existingUser) {

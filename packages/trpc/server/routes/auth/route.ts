@@ -14,7 +14,7 @@ import {
   signInUserWithEmailAndPasswordOutputModel,
   signOutInputModel,
   signOutOutputModel,
-} from "./model";
+} from "@repo/validators/auth";
 
 const TAGS = ["Authentication"];
 const getPath = generatePath("/authentication");
