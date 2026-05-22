@@ -1,7 +1,19 @@
-import { pgTable, uuid, varchar, timestamp, boolean, text } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  uniqueIndex,
+  uuid,
+  varchar,
+  timestamp,
+  boolean,
+  text,
+} from "drizzle-orm/pg-core";
 
-export const usersTable = pgTable("users", {
+export const usersTable = pgTable(
+  "users",
+  {
   id: uuid("id").primaryKey().defaultRandom(),
+
+  username: varchar("username", { length: 32 }).notNull(),
 
   fullName: varchar("full_name", { length: 80 }).notNull(),
 
@@ -15,7 +27,9 @@ export const usersTable = pgTable("users", {
 
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
-});
+  },
+  (table) => [uniqueIndex("users_username_unique").on(table.username)],
+);
 
 export type SelectUser = typeof usersTable.$inferSelect;
 export type InsertUser = typeof usersTable.$inferInsert;

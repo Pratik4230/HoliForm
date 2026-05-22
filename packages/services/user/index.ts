@@ -18,6 +18,14 @@ class UserService {
     return user.length > 0 ? user[0] : null;
   }
 
+  private async getUserByUsername(username: string) {
+    const user = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.username, username));
+    return user.length > 0 ? user[0] : null;
+  }
+
   private async generateJWTToken(payload: GenerateJWTTokenInput) {
     const { id } = await generateJWTTokenInputModel.parseAsync(payload);
     const token = JWT.sign({ id }, env.JWT_SECRET);
@@ -41,6 +49,7 @@ class UserService {
     const user = await db
       .select({
         id: usersTable.id,
+        username: usersTable.username,
         email: usersTable.email,
         fullName: usersTable.fullName,
         profileImageUrl: usersTable.profileImageUrl,
@@ -55,20 +64,24 @@ class UserService {
     return userRecord;
   }
   public async createUserWithEmailAndPassword(payload: CreateUserWithEmailAndPasswordInput) {
-    const { fullName, email, password } =
+    const { username, fullName, email, password } =
       await createUserWithEmailAndPasswordInputModel.parseAsync(payload);
 
-    // check is user exists by email
     const isUserExists = await this.getUserByEmail(email);
     if (isUserExists) {
       throw new Error("User with this email already exists");
+    }
+
+    const isUsernameTaken = await this.getUserByUsername(username);
+    if (isUsernameTaken) {
+      throw new Error("Username is already taken");
     }
 
     const salt = randomBytes(16).toString("hex");
     const hash = await this.generateHash(salt, password);
     const userInsertResult = await db
       .insert(usersTable)
-      .values({ email, fullName, password: hash, salt })
+      .values({ username, email, fullName, password: hash, salt })
       .returning({
         id: usersTable.id,
       });

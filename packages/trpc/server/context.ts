@@ -9,6 +9,7 @@ export interface TRPCContext {
 
 export type AuthenticatedUser = {
   id: string;
+  username: string;
   email: string;
   fullName: string;
   profileImageUrl: string | null;

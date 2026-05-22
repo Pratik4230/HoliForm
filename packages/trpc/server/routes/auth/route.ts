@@ -1,3 +1,5 @@
+import { TRPCError } from "@trpc/server";
+
 import { publicProcedure, protectedProcedure, router } from "../../trpc";
 import {
   clearAutheticationCookie,
@@ -19,6 +21,24 @@ import {
 const TAGS = ["Authentication"];
 const getPath = generatePath("/authentication");
 
+function handleAuthServiceError(error: unknown): never {
+  if (!(error instanceof Error)) {
+    throw error;
+  }
+
+  if (
+    error.message === "User with this email already exists" ||
+    error.message === "Username is already taken"
+  ) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: error.message,
+    });
+  }
+
+  throw error;
+}
+
 export const authRouter = router({
   createUserWithEmailAndPasswordInput: publicProcedure
     .meta({
@@ -31,16 +51,13 @@ export const authRouter = router({
     .input(createUserWithEmailAndPasswordInputModel)
     .output(createUserWithEmailAndPasswordOutputModel)
     .mutation(async ({ input, ctx }) => {
-      const { fullName, email, password } = input;
-      const { id, token } = await userService.createUserWithEmailAndPassword({
-        fullName,
-        email,
-        password,
-      });
-
-      setAutheticationCookie(ctx, token);
-
-      return { id, token };
+      try {
+        const { id, token } = await userService.createUserWithEmailAndPassword(input);
+        setAutheticationCookie(ctx, token);
+        return { id, token };
+      } catch (error) {
+        handleAuthServiceError(error);
+      }
     }),
 
   signInUserWithEmailAndPassword: publicProcedure
@@ -77,8 +94,8 @@ export const authRouter = router({
     .input(getLoggedInUserInfoInputModel)
     .output(getLoggedInUserInfoOutputModel)
     .query(async ({ ctx }) => {
-      const { id, email, fullName, profileImageUrl } = ctx.user;
-      return { id, email, fullName, profileImageUrl };
+      const { id, username, email, fullName, profileImageUrl } = ctx.user;
+      return { id, username, email, fullName, profileImageUrl };
     }),
 
   signOut: publicProcedure

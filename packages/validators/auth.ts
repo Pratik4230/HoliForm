@@ -1,6 +1,9 @@
 import { z } from "zod";
 
+import { usernameModel } from "./user";
+
 export const createUserWithEmailAndPasswordInputModel = z.object({
+  username: usernameModel,
   fullName: z.string().min(1).max(80).describe("The full name of the user"),
   email: z.email().describe("The email of the user"),
   password: z.string().min(8).max(100).describe("The password of the user"),
@@ -47,6 +50,7 @@ export const getLoggedInUserInfoInputModel = z.undefined();
 
 export const getLoggedInUserInfoOutputModel = z.object({
   id: z.uuid().describe("Id of User"),
+  username: usernameModel.describe("Public username"),
   email: z.email().describe("Email of User"),
   fullName: z.string().describe("Full name of user"),
   profileImageUrl: z

@@ -8,7 +8,10 @@ import type {
   FormRecord,
   GetFormByIdInput,
   GetFormByIdOutput,
+  GetPublicFormInput,
+  GetPublicFormOutput,
   PublishFormInput,
+  PublicFormRecord,
   ReorderFormFieldInput,
   SetFormAcceptingResponsesInput,
   SetFormVisibilityInput,
@@ -19,6 +22,7 @@ import type {
 
 import * as formDomain from "./form";
 import * as formFieldDomain from "./formField";
+import * as publicDomain from "./public";
 
 export { buildSubmissionSchemaFromFields } from "./buildSubmissionSchema";
 
@@ -70,6 +74,10 @@ class FormService {
   reorderFormField(userId: string, payload: ReorderFormFieldInput) {
     return formFieldDomain.reorderFormField(userId, payload);
   }
+
+  getPublicForm(payload: GetPublicFormInput) {
+    return publicDomain.getPublicForm(payload);
+  }
 }
 
 export default FormService;
@@ -84,7 +92,10 @@ export type {
   FormRecord,
   GetFormByIdInput,
   GetFormByIdOutput,
+  GetPublicFormInput,
+  GetPublicFormOutput,
   PublishFormInput,
+  PublicFormRecord,
   ReorderFormFieldInput,
   SetFormAcceptingResponsesInput,
   SetFormVisibilityInput,

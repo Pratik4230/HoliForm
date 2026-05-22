@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
 import { formService } from "../../services";
-import { protectedProcedure, router } from "../../trpc";
+import { protectedProcedure, publicProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
 import {
   createFormInputModel,
@@ -13,6 +13,8 @@ import {
   formRecordOutputModel,
   getFormByIdInputModel,
   getFormByIdOutputModel,
+  getPublicFormInputModel,
+  getPublicFormOutputModel,
   listFormsInputModel,
   listFormsOutputModel,
   publishFormInputModel,
@@ -32,7 +34,11 @@ function handleFormServiceError(error: unknown): never {
     throw error;
   }
 
-  if (error.message === "Form not found" || error.message === "Form field not found") {
+  if (
+    error.message === "Form not found" ||
+    error.message === "Form field not found" ||
+    error.message === "Form is not available"
+  ) {
     throw new TRPCError({
       code: "NOT_FOUND",
       message: error.message,
@@ -260,6 +266,24 @@ export const formsRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.reorderFormField(ctx.user.id, input);
+      } catch (error) {
+        handleFormServiceError(error);
+      }
+    }),
+
+  getPublicForm: publicProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/getPublicForm"),
+        tags: TAGS,
+      },
+    })
+    .input(getPublicFormInputModel)
+    .output(getPublicFormOutputModel)
+    .query(async ({ input }) => {
+      try {
+        return await formService.getPublicForm(input);
       } catch (error) {
         handleFormServiceError(error);
       }
