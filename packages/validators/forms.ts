@@ -26,6 +26,8 @@ export const formRecordOutputModel = z.object({
 
 export type FormRecord = z.infer<typeof formRecordOutputModel>;
 
+export const formVisibilityModel = z.enum(["public", "unlisted"]);
+
 export const listFormsInputModel = z.undefined();
 
 export const listFormsOutputModel = z
@@ -100,3 +102,116 @@ export const getFormByIdOutputModel = z.object({
 });
 
 export type GetFormByIdOutput = z.infer<typeof getFormByIdOutputModel>;
+
+export const updateFormInputModel = z
+  .object({
+    formId: z.uuid().describe("Form id"),
+    title: z.string().min(1).max(255).optional().describe("Form title"),
+    description: z.string().max(10000).optional().describe("Form description"),
+    slug: z.string().min(1).max(128).optional().describe("URL slug unique per creator"),
+    themeId: z.string().max(64).nullable().optional().describe("Preset theme id"),
+    thankYouMessage: z
+      .string()
+      .max(10000)
+      .nullable()
+      .optional()
+      .describe("Message shown after submit"),
+  })
+  .refine(
+    (data) =>
+      data.title !== undefined ||
+      data.description !== undefined ||
+      data.slug !== undefined ||
+      data.themeId !== undefined ||
+      data.thankYouMessage !== undefined,
+    { message: "At least one field to update is required" },
+  );
+
+export type UpdateFormInput = z.infer<typeof updateFormInputModel>;
+
+export const deleteFormInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+});
+
+export type DeleteFormInput = z.infer<typeof deleteFormInputModel>;
+
+export const deleteFormOutputModel = z.object({
+  success: z.boolean().describe("Whether delete succeeded"),
+});
+
+export type DeleteFormOutput = z.infer<typeof deleteFormOutputModel>;
+
+export const publishFormInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+});
+
+export type PublishFormInput = z.infer<typeof publishFormInputModel>;
+
+export const unpublishFormInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+});
+
+export type UnpublishFormInput = z.infer<typeof unpublishFormInputModel>;
+
+export const setFormVisibilityInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+  visibility: formVisibilityModel.describe("public or unlisted"),
+});
+
+export type SetFormVisibilityInput = z.infer<typeof setFormVisibilityInputModel>;
+
+export const closeFormInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+});
+
+export type CloseFormInput = z.infer<typeof closeFormInputModel>;
+
+export const reopenFormInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+});
+
+export type ReopenFormInput = z.infer<typeof reopenFormInputModel>;
+
+const labelKeyRegex = /^[a-z0-9_]+$/;
+
+export const upsertFormFieldInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+  fieldId: z.uuid().optional().describe("Field id when updating"),
+  label: z.string().min(1).max(255).describe("Field label"),
+  labelKey: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(labelKeyRegex, "labelKey must be lowercase letters, numbers, or underscores")
+    .describe("Stable key for answers"),
+  type: formFieldTypeModel.describe("Field type"),
+  index: z.string().optional().describe("Sort order; auto-assigned on create if omitted"),
+  isRequired: z.boolean().optional().default(false).describe("Whether the field is required"),
+  description: z.string().max(5000).nullable().optional().describe("Field description"),
+  placeholder: z.string().max(5000).nullable().optional().describe("Placeholder"),
+  options: formFieldOptionsModel.describe("UI options"),
+  validationRules: formFieldValidationRulesModel.describe("Validation rules"),
+});
+
+export type UpsertFormFieldInput = z.infer<typeof upsertFormFieldInputModel>;
+
+export const deleteFormFieldInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+  fieldId: z.uuid().describe("Field id"),
+});
+
+export type DeleteFormFieldInput = z.infer<typeof deleteFormFieldInputModel>;
+
+export const deleteFormFieldOutputModel = z.object({
+  success: z.boolean().describe("Whether delete succeeded"),
+});
+
+export type DeleteFormFieldOutput = z.infer<typeof deleteFormFieldOutputModel>;
+
+export const reorderFormFieldInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+  fieldId: z.uuid().describe("Field id"),
+  index: z.string().describe("New fractional sort index"),
+});
+
+export type ReorderFormFieldInput = z.infer<typeof reorderFormFieldInputModel>;
