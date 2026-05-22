@@ -4,7 +4,6 @@ import { formService } from "../../services";
 import { protectedProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
 import {
-  closeFormInputModel,
   createFormInputModel,
   deleteFormFieldInputModel,
   deleteFormFieldOutputModel,
@@ -17,8 +16,8 @@ import {
   listFormsInputModel,
   listFormsOutputModel,
   publishFormInputModel,
-  reopenFormInputModel,
   reorderFormFieldInputModel,
+  setFormAcceptingResponsesInputModel,
   setFormVisibilityInputModel,
   unpublishFormInputModel,
   updateFormInputModel,
@@ -194,37 +193,19 @@ export const formsRouter = router({
       }
     }),
 
-  closeForm: protectedProcedure
+  setFormAcceptingResponses: protectedProcedure
     .meta({
       openapi: {
-        method: "POST",
-        path: getPath("/closeForm"),
+        method: "PATCH",
+        path: getPath("/setFormAcceptingResponses"),
         tags: TAGS,
       },
     })
-    .input(closeFormInputModel)
+    .input(setFormAcceptingResponsesInputModel)
     .output(formRecordOutputModel)
     .mutation(async ({ ctx, input }) => {
       try {
-        return await formService.closeForm(ctx.user.id, input);
-      } catch (error) {
-        handleFormServiceError(error);
-      }
-    }),
-
-  reopenForm: protectedProcedure
-    .meta({
-      openapi: {
-        method: "POST",
-        path: getPath("/reopenForm"),
-        tags: TAGS,
-      },
-    })
-    .input(reopenFormInputModel)
-    .output(formRecordOutputModel)
-    .mutation(async ({ ctx, input }) => {
-      try {
-        return await formService.reopenForm(ctx.user.id, input);
+        return await formService.setFormAcceptingResponses(ctx.user.id, input);
       } catch (error) {
         handleFormServiceError(error);
       }
