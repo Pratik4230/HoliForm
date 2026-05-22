@@ -1,9 +1,13 @@
-import { and, db, desc, eq } from "@repo/database";
+import { and, asc, db, desc, eq } from "@repo/database";
 import { formsTable } from "@repo/database/models/form";
+import { formFieldsTable } from "@repo/database/models/formField";
 import {
   createFormInputModel,
   type CreateFormInput,
+  type FormFieldRecord,
   type FormRecord,
+  type GetFormByIdInput,
+  type GetFormByIdOutput,
 } from "@repo/validators/forms";
 
 function slugify(value: string): string {
@@ -39,6 +43,24 @@ class FormService {
     }
 
     return slug;
+  }
+
+  private mapFormFieldRecord(row: typeof formFieldsTable.$inferSelect): FormFieldRecord {
+    return {
+      id: row.id,
+      formId: row.formId,
+      label: row.label,
+      labelKey: row.labelKey,
+      description: row.description ?? null,
+      placeholder: row.placeholder ?? null,
+      isRequired: row.isRequired,
+      index: String(row.index),
+      type: row.type,
+      options: row.options ?? null,
+      validationRules: row.validationRules ?? null,
+      createdAt: row.createdAt ?? null,
+      updatedAt: row.updatedAt ?? null,
+    };
   }
 
   private mapFormRecord(row: typeof formsTable.$inferSelect): FormRecord {
@@ -99,6 +121,32 @@ class FormService {
       .orderBy(desc(formsTable.createdAt));
 
     return rows.map((row) => this.mapFormRecord(row));
+  }
+
+  public async getFormById(userId: string, payload: GetFormByIdInput): Promise<GetFormByIdOutput> {
+    const { formId } = payload;
+
+    const rows = await db
+      .select({
+        form: formsTable,
+        field: formFieldsTable,
+      })
+      .from(formsTable)
+      .leftJoin(formFieldsTable, eq(formFieldsTable.formId, formsTable.id))
+      .where(and(eq(formsTable.id, formId), eq(formsTable.userId, userId)))
+      .orderBy(asc(formFieldsTable.index));
+
+    const firstRow = rows[0];
+    if (!firstRow) {
+      throw new Error("Form not found");
+    }
+
+    return {
+      form: this.mapFormRecord(firstRow.form),
+      fields: rows
+        .filter((row) => row.field !== null)
+        .map((row) => this.mapFormFieldRecord(row.field!)),
+    };
   }
 }
 

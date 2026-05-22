@@ -33,3 +33,70 @@ export const listFormsOutputModel = z
   .describe("Forms owned by the logged-in user, newest first");
 
 export type ListFormsOutput = z.infer<typeof listFormsOutputModel>;
+
+export const formFieldTypeModel = z.enum([
+  "text",
+  "textarea",
+  "email",
+  "number",
+  "phone",
+  "date",
+  "time",
+  "checkbox",
+  "radio",
+  "select",
+  "multiselect",
+  "rating",
+]);
+
+export const formFieldOptionsModel = z
+  .object({
+    choices: z.array(z.string()).optional(),
+    min: z.number().optional(),
+    max: z.number().optional(),
+    step: z.number().optional(),
+  })
+  .nullable()
+  .optional();
+
+export const formFieldValidationRulesModel = z
+  .object({
+    minLength: z.number().optional(),
+    maxLength: z.number().optional(),
+    min: z.number().optional(),
+    max: z.number().optional(),
+    pattern: z.string().optional(),
+  })
+  .nullable()
+  .optional();
+
+export const formFieldOutputModel = z.object({
+  id: z.uuid().describe("Field id"),
+  formId: z.uuid().describe("Form id"),
+  label: z.string().describe("Field label"),
+  labelKey: z.string().describe("Stable key for answers"),
+  description: z.string().nullable().describe("Field description"),
+  placeholder: z.string().nullable().describe("Placeholder text"),
+  isRequired: z.boolean().describe("Whether the field is required"),
+  index: z.string().describe("Sort order (fractional numeric)"),
+  type: formFieldTypeModel.describe("Field type"),
+  options: formFieldOptionsModel.describe("UI options"),
+  validationRules: formFieldValidationRulesModel.describe("Validation rules"),
+  createdAt: z.coerce.date().nullable().describe("Created at"),
+  updatedAt: z.coerce.date().nullable().describe("Updated at"),
+});
+
+export type FormFieldRecord = z.infer<typeof formFieldOutputModel>;
+
+export const getFormByIdInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+});
+
+export type GetFormByIdInput = z.infer<typeof getFormByIdInputModel>;
+
+export const getFormByIdOutputModel = z.object({
+  form: formRecordOutputModel.describe("Form"),
+  fields: z.array(formFieldOutputModel).describe("Fields sorted by index"),
+});
+
+export type GetFormByIdOutput = z.infer<typeof getFormByIdOutputModel>;

@@ -6,6 +6,8 @@ import { generatePath } from "../../utils/path-generator";
 import {
   createFormInputModel,
   formRecordOutputModel,
+  getFormByIdInputModel,
+  getFormByIdOutputModel,
   listFormsInputModel,
   listFormsOutputModel,
 } from "@repo/validators/forms";
@@ -53,5 +55,29 @@ export const formsRouter = router({
     .output(listFormsOutputModel)
     .query(async ({ ctx }) => {
       return await formService.listForms(ctx.user.id);
+    }),
+
+  getFormById: protectedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/getFormById"),
+        tags: TAGS,
+      },
+    })
+    .input(getFormByIdInputModel)
+    .output(getFormByIdOutputModel)
+    .query(async ({ ctx, input }) => {
+      try {
+        return await formService.getFormById(ctx.user.id, input);
+      } catch (error) {
+        if (error instanceof Error && error.message === "Form not found") {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: error.message,
+          });
+        }
+        throw error;
+      }
     }),
 });
