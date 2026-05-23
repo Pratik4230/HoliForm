@@ -4,6 +4,7 @@
   "extends": "./base.json",
   "compilerOptions": {
     "moduleResolution": "Node",
-    "module": "CommonJS"
+    "module": "CommonJS",
+    "types": ["node"]
   }
 }

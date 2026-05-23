@@ -12,6 +12,7 @@
     "check-types": "tsc -p tsconfig.json && turbo run check-types"
   },
   "devDependencies": {
+    "@types/node": "^22.15.3",
     "prettier": "^3.7.4",
     "turbo": "^2.7.2",
     "typescript": "5.9.2"
