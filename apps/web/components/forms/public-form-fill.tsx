@@ -53,7 +53,6 @@ function FieldInput({
         />
       );
     case "number":
-    case "rating":
       return (
         <Input
           id={field.labelKey}
@@ -168,15 +167,7 @@ function FieldInput({
           onChange={(e) => onChange(e.target.value)}
         />
       );
-    case "time":
-      return (
-        <Input
-          id={field.labelKey}
-          type="time"
-          value={typeof value === "string" ? value : ""}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      );
+
     default:
       return (
         <Input

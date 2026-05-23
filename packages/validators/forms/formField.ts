@@ -7,12 +7,10 @@ export const formFieldTypeModel = z.enum([
   "number",
   "phone",
   "date",
-  "time",
   "checkbox",
   "radio",
   "select",
   "multiselect",
-  "rating",
 ]);
 
 export const formFieldOptionsModel = z

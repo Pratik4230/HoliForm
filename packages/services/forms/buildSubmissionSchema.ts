@@ -39,13 +39,9 @@ function buildFieldSchema(field: FormFieldRecord): z.ZodTypeAny {
       schema = applyStringRules(z.email() as z.ZodType<string>, field);
       break;
     case "number":
-    case "rating":
       schema = applyNumberRules(z.coerce.number(), field);
       break;
     case "date":
-      schema = z.string();
-      break;
-    case "time":
       schema = z.string();
       break;
     case "checkbox":

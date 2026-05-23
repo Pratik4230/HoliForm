@@ -19,12 +19,10 @@ export const formFieldTypeEnum = pgEnum("form_field_type", [
   "number",
   "phone",
   "date",
-  "time",
   "checkbox",
   "radio",
   "select",
   "multiselect",
-  "rating",
 ]);
 
 export type FormFieldOptions = {
