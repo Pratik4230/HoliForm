@@ -32,3 +32,21 @@ export const getPublicFormOutputModel = z.object({
 });
 
 export type GetPublicFormOutput = z.infer<typeof getPublicFormOutputModel>;
+
+export const submitFormResponseInputModel = z.object({
+  username: usernameModel.describe("Creator username"),
+  slug: z.string().min(1).max(128).describe("Form slug"),
+  answers: z
+    .record(z.string(), z.unknown())
+    .describe("Answers keyed by field labelKey"),
+});
+
+export type SubmitFormResponseInput = z.infer<typeof submitFormResponseInputModel>;
+
+export const submitFormResponseOutputModel = z.object({
+  success: z.boolean().describe("Whether submit succeeded"),
+  responseId: z.uuid().describe("Created response id"),
+  thankYouMessage: z.string().describe("Confirmation message for respondent"),
+});
+
+export type SubmitFormResponseOutput = z.infer<typeof submitFormResponseOutputModel>;

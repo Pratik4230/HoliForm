@@ -15,6 +15,8 @@ import {
   getFormByIdOutputModel,
   getPublicFormInputModel,
   getPublicFormOutputModel,
+  submitFormResponseInputModel,
+  submitFormResponseOutputModel,
   listFormsInputModel,
   listFormsOutputModel,
   publishFormInputModel,
@@ -42,6 +44,21 @@ function handleFormServiceError(error: unknown): never {
     throw new TRPCError({
       code: "NOT_FOUND",
       message: error.message,
+    });
+  }
+
+  if (error.message === "Form is not accepting responses") {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: error.message,
+    });
+  }
+
+  if (error.name === "ZodError") {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Invalid form answers",
+      cause: error,
     });
   }
 
@@ -284,6 +301,26 @@ export const formsRouter = router({
     .query(async ({ input }) => {
       try {
         return await formService.getPublicForm(input);
+      } catch (error) {
+        handleFormServiceError(error);
+      }
+    }),
+
+  submitFormResponse: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/submitFormResponse"),
+        tags: TAGS,
+      },
+    })
+    .input(submitFormResponseInputModel)
+    .output(submitFormResponseOutputModel)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await formService.submitFormResponse(input, {
+          respondentIp: ctx.respondentIp,
+        });
       } catch (error) {
         handleFormServiceError(error);
       }

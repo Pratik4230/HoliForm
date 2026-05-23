@@ -51,29 +51,30 @@ export const getFormByIdOutputModel = z.object({
 
 export type GetFormByIdOutput = z.infer<typeof getFormByIdOutputModel>;
 
-export const updateFormInputModel = z
-  .object({
-    formId: z.uuid().describe("Form id"),
-    title: z.string().min(1).max(255).optional().describe("Form title"),
-    description: z.string().max(10000).optional().describe("Form description"),
-    slug: z.string().min(1).max(128).optional().describe("URL slug unique per creator"),
-    themeId: z.string().max(64).nullable().optional().describe("Preset theme id"),
-    thankYouMessage: z
-      .string()
-      .max(10000)
-      .nullable()
-      .optional()
-      .describe("Message shown after submit"),
-  })
-  .refine(
-    (data) =>
-      data.title !== undefined ||
-      data.description !== undefined ||
-      data.slug !== undefined ||
-      data.themeId !== undefined ||
-      data.thankYouMessage !== undefined,
-    { message: "At least one field to update is required" },
-  );
+export const updateFormInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+  title: z.string().min(1).max(255).optional().describe("Form title"),
+  description: z.string().max(10000).optional().describe("Form description"),
+  slug: z.string().min(1).max(128).optional().describe("URL slug unique per creator"),
+  themeId: z.string().max(64).nullable().optional().describe("Preset theme id"),
+  thankYouMessage: z
+    .string()
+    .max(10000)
+    .nullable()
+    .optional()
+    .describe("Message shown after submit"),
+});
+
+/** Client-side / form validation; avoid on tRPC input (breaks OpenAPI .omit()). */
+export const updateFormInputFormModel = updateFormInputModel.refine(
+  (data) =>
+    data.title !== undefined ||
+    data.description !== undefined ||
+    data.slug !== undefined ||
+    data.themeId !== undefined ||
+    data.thankYouMessage !== undefined,
+  { message: "At least one field to update is required" },
+);
 
 export type UpdateFormInput = z.infer<typeof updateFormInputModel>;
 

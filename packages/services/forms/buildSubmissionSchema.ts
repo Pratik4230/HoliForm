@@ -89,5 +89,9 @@ export function buildSubmissionSchemaFromFields(fields: FormFieldRecord[]) {
     shape[field.labelKey] = buildFieldSchema(field);
   }
 
-  return z.object(shape);
+  if (Object.keys(shape).length === 0) {
+    return z.object(shape);
+  }
+
+  return z.object(shape).strict();
 }

@@ -102,6 +102,16 @@ export async function updateForm(userId: string, payload: UpdateFormInput): Prom
   const { formId, title, description, slug: slugInput, themeId, thankYouMessage } =
     await updateFormInputModel.parseAsync(payload);
 
+  if (
+    title === undefined &&
+    description === undefined &&
+    slugInput === undefined &&
+    themeId === undefined &&
+    thankYouMessage === undefined
+  ) {
+    throw new Error("At least one field to update is required");
+  }
+
   await getOwnedFormOrThrow(userId, formId);
 
   const updates: Partial<typeof formsTable.$inferInsert> = {};

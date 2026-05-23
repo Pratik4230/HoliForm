@@ -22,6 +22,13 @@
       "when": 1779378508645,
       "tag": "0002_tired_tinkerer",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779455839030,
+      "tag": "0003_slim_stardust",
+      "breakpoints": true
     }
   ]
 }
