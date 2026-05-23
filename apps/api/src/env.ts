@@ -4,6 +4,12 @@ const envSchema = z.object({
   PORT: z.string().optional(),
   NODE_ENV: z.enum(["development", "prod"]).default("development"),
   BASE_URL: z.string().default("http://localhost:8000"),
+  RATE_LIMIT_API_WINDOW_MS: z.coerce.number().int().positive().default(900_000),
+  RATE_LIMIT_API_MAX: z.coerce.number().int().positive().default(300),
+  RATE_LIMIT_AUTH_WINDOW_MS: z.coerce.number().int().positive().default(900_000),
+  RATE_LIMIT_AUTH_MAX: z.coerce.number().int().positive().default(30),
+  RATE_LIMIT_SUBMIT_WINDOW_MS: z.coerce.number().int().positive().default(900_000),
+  RATE_LIMIT_SUBMIT_MAX: z.coerce.number().int().positive().default(10),
 });
 
 function createEnv(env: NodeJS.ProcessEnv) {

@@ -3,7 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { toastIfRateLimited, type TrpcClientError } from "~/lib/api-error";
 import { trpc } from "~/trpc/client";
+
+function toastRateLimitError(error: TrpcClientError): boolean {
+  if (!toastIfRateLimited(error)) {
+    return false;
+  }
+  toast.error("Too many attempts. Please wait a few minutes and try again.");
+  return true;
+}
 
 export function useSession() {
   return trpc.auth.getLoggedInUserInfo.useQuery(undefined, {
@@ -40,6 +49,9 @@ export function useSignIn() {
       router.refresh();
     },
     onError: (error) => {
+      if (toastRateLimitError(error)) {
+        return;
+      }
       toast.error(error.message || "Invalid email or password");
     },
   });
@@ -57,6 +69,9 @@ export function useSignUp() {
       router.refresh();
     },
     onError: (error) => {
+      if (toastRateLimitError(error)) {
+        return;
+      }
       toast.error(error.message || "Could not create account");
     },
   });

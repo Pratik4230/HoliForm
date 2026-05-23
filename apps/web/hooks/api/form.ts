@@ -2,6 +2,8 @@
 
 import { toast } from "sonner";
 import type { RouterOutputs } from "@repo/trpc/client";
+import { API_ERROR_CODES } from "@repo/validators/api-errors";
+import { getApiErrorCode } from "~/lib/api-error";
 import { trpc } from "~/trpc/client";
 
 export type FormRecord = RouterOutputs["forms"]["listForms"][number];
@@ -184,6 +186,11 @@ export function useSubmitFormResponse(options?: {
       options?.onSuccess?.(data);
     },
     onError: (error) => {
+      const code = getApiErrorCode(error);
+      if (code === API_ERROR_CODES.RATE_LIMIT_EXCEEDED) {
+        toast.error("Too many submissions. Please wait a few minutes and try again.");
+        return;
+      }
       toast.error(error.message || "Could not submit your answers");
     },
   });

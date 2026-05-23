@@ -4,23 +4,41 @@ import {
 } from "@repo/trpc/client";
 import { API_ERROR_CODES, type ApiErrorCode, apiErrorCodeModel } from "@repo/validators/api-errors";
 
-export function getApiErrorCode(
-  error: TRPCClientErrorLike<ServerRouter> | null | undefined,
-): ApiErrorCode | undefined {
+export type TrpcClientError = TRPCClientErrorLike<ServerRouter>;
+
+type ErrorDataShape = {
+  apiCode?: unknown;
+  httpStatus?: number;
+};
+
+function readErrorData(error: TrpcClientError | null | undefined): ErrorDataShape | undefined {
   if (!error?.data) {
     return undefined;
   }
-
-  const parsed = apiErrorCodeModel.safeParse(
-    (error.data as { apiCode?: unknown }).apiCode,
-  );
-
-  return parsed.success ? parsed.data : undefined;
+  return error.data as ErrorDataShape;
 }
 
-export function getPublicFormErrorMessage(
-  error: TRPCClientErrorLike<ServerRouter> | null | undefined,
-): string {
+export function getApiErrorCode(
+  error: TrpcClientError | null | undefined,
+): ApiErrorCode | undefined {
+  const data = readErrorData(error);
+  if (!data) {
+    return undefined;
+  }
+
+  const parsed = apiErrorCodeModel.safeParse(data.apiCode);
+  if (parsed.success) {
+    return parsed.data;
+  }
+
+  if (data.httpStatus === 429) {
+    return API_ERROR_CODES.RATE_LIMIT_EXCEEDED;
+  }
+
+  return undefined;
+}
+
+export function getPublicFormErrorMessage(error: TrpcClientError | null | undefined): string {
   const code = getApiErrorCode(error);
 
   switch (code) {
@@ -30,7 +48,16 @@ export function getPublicFormErrorMessage(
       return "We could not find this form. The link may be wrong or the form was removed.";
     case API_ERROR_CODES.FORM_NOT_ACCEPTING_RESPONSES:
       return "This form is no longer accepting responses.";
+    case API_ERROR_CODES.RATE_LIMIT_EXCEEDED:
+      return "Too many submissions from your network. Please wait a few minutes and try again.";
     default:
       return "This form does not exist, is not published, or cannot be opened.";
   }
+}
+
+export function toastIfRateLimited(error: TrpcClientError): boolean {
+  if (getApiErrorCode(error) !== API_ERROR_CODES.RATE_LIMIT_EXCEEDED) {
+    return false;
+  }
+  return true;
 }

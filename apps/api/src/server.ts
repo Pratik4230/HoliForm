@@ -10,8 +10,13 @@ import { apiReference } from "@scalar/express-api-reference";
 import { serverRouter, createContext } from "@repo/trpc/server";
 
 import { env } from "./env";
+import { apiRateLimitMiddleware } from "./middleware/rate-limit";
 
 export const app = express();
+
+if (env.NODE_ENV === "prod") {
+  app.set("trust proxy", 1);
+}
 const openApiDocument = generateOpenApiDocument(serverRouter, {
   title: "Streamyst OpenAPI",
   version: "1.0.0",
@@ -46,6 +51,9 @@ app.get("/openapi.json", (req, res) => {
 logger.debug(`docs: ${env.BASE_URL}/docs`);
 app.use("/docs", apiReference({ url: "/openapi.json" }));
 
+for (const limiter of apiRateLimitMiddleware) {
+  app.use("/api", limiter);
+}
 app.use(
   "/api",
   createOpenApiExpressMiddleware({
@@ -54,6 +62,9 @@ app.use(
   }),
 );
 
+for (const limiter of apiRateLimitMiddleware) {
+  app.use("/trpc", limiter);
+}
 app.use(
   "/trpc",
   trpcExpress.createExpressMiddleware({

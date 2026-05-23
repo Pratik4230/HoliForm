@@ -18,9 +18,7 @@ export const publicFormOutputModel = z.object({
   slug: z.string().describe("URL slug"),
   themeId: z.string().nullable().describe("Theme id"),
   thankYouMessage: z.string().nullable().describe("Message after submit"),
-  acceptingResponses: z
-    .boolean()
-    .describe("Whether the form accepts new submissions"),
+  acceptingResponses: z.boolean().describe("Whether the form accepts new submissions"),
   closedAt: z.coerce.date().nullable().describe("When responses were closed"),
 });
 
@@ -36,9 +34,7 @@ export type GetPublicFormOutput = z.infer<typeof getPublicFormOutputModel>;
 export const submitFormResponseInputModel = z.object({
   username: usernameModel.describe("Creator username"),
   slug: z.string().min(1).max(128).describe("Form slug"),
-  answers: z
-    .record(z.string(), z.unknown())
-    .describe("Answers keyed by field labelKey"),
+  answers: z.record(z.string(), z.unknown()).describe("Answers keyed by field labelKey"),
 });
 
 export type SubmitFormResponseInput = z.infer<typeof submitFormResponseInputModel>;
