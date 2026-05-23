@@ -10,6 +10,8 @@ import type {
   GetFormByIdOutput,
   GetPublicFormInput,
   GetPublicFormOutput,
+  ListPublicFormsInput,
+  ListPublicFormsOutput,
   SubmitFormResponseInput,
   SubmitFormResponseOutput,
   PublishFormInput,
@@ -81,6 +83,10 @@ class FormService {
     return publicDomain.getPublicForm(payload);
   }
 
+  listPublicForms(payload: ListPublicFormsInput) {
+    return publicDomain.listPublicForms(payload);
+  }
+
   submitFormResponse(
     payload: SubmitFormResponseInput,
     options?: { respondentIp?: string },
@@ -103,6 +109,8 @@ export type {
   GetFormByIdOutput,
   GetPublicFormInput,
   GetPublicFormOutput,
+  ListPublicFormsInput,
+  ListPublicFormsOutput,
   SubmitFormResponseInput,
   SubmitFormResponseOutput,
   PublishFormInput,

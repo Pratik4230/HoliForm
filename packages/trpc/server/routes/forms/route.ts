@@ -15,6 +15,8 @@ import {
   getFormByIdOutputModel,
   getPublicFormInputModel,
   getPublicFormOutputModel,
+  listPublicFormsInputModel,
+  listPublicFormsOutputModel,
   submitFormResponseInputModel,
   submitFormResponseOutputModel,
   listFormsInputModel,
@@ -179,6 +181,18 @@ export const formsRouter = router({
     .query(async ({ input }) => {
       try {
         return await formService.getPublicForm(input);
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+
+  listPublic: publicProcedure
+    .meta(publicOpenApiMeta("GET", getPath("/listPublic"), TAGS))
+    .input(listPublicFormsInputModel)
+    .output(listPublicFormsOutputModel)
+    .query(async ({ input }) => {
+      try {
+        return await formService.listPublicForms(input);
       } catch (error) {
         mapServiceError(error);
       }

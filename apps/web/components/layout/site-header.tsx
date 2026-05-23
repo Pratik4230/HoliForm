@@ -7,7 +7,10 @@ import { Button } from "~/components/ui/button";
 import { useSession } from "~/hooks/api/auth";
 import { cn } from "~/lib/utils";
 
-const navLinks = [{ href: "/pricing", label: "Pricing" }];
+const navLinks = [
+  { href: "/explore", label: "Explore" },
+  { href: "/pricing", label: "Pricing" },
+];
 
 export function SiteHeader() {
   const pathname = usePathname();

@@ -198,6 +198,7 @@ function isStepValid(field: FormField, value: unknown) {
 export function PublicFormFill({ username, slug }: PublicFormFillProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
+  const [honeypot, setHoneypot] = useState("");
   const [thankYouMessage, setThankYouMessage] = useState<string | null>(null);
 
   const query = usePublicForm(username, slug);
@@ -291,6 +292,7 @@ export function PublicFormFill({ username, slug }: PublicFormFillProps) {
       username,
       slug,
       answers,
+      _hpWebsite: honeypot,
     });
   };
 
@@ -303,7 +305,7 @@ export function PublicFormFill({ username, slug }: PublicFormFillProps) {
         <Progress value={progress} className="h-2" />
       </div>
 
-      <Card className="border-0 shadow-xl">
+      <Card className="relative border-0 shadow-xl">
         <CardHeader>
           <CardTitle className="text-2xl">{form.title}</CardTitle>
           {stepIndex === 0 && form.description ? (
@@ -311,6 +313,16 @@ export function PublicFormFill({ username, slug }: PublicFormFillProps) {
           ) : null}
         </CardHeader>
         <CardContent className="space-y-6">
+          <input
+            type="text"
+            name="_hpWebsite"
+            value={honeypot}
+            onChange={(event) => setHoneypot(event.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="pointer-events-none absolute -left-[9999px] h-0 w-0 opacity-0"
+          />
           {currentField ? (
             <Field>
               <FieldLabel htmlFor={currentField.labelKey}>

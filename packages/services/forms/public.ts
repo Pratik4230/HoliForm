@@ -1,4 +1,6 @@
-import { and, asc, db, eq } from "@repo/database";
+import { randomUUID } from "node:crypto";
+
+import { and, asc, db, desc, eq } from "@repo/database";
 import { formsTable } from "@repo/database/models/form";
 import { formFieldsTable } from "@repo/database/models/formField";
 import {
@@ -10,9 +12,13 @@ import { API_ERROR_CODES } from "@repo/validators/api-errors";
 import type { FormFieldRecord } from "@repo/validators/forms";
 import {
   getPublicFormInputModel,
+  listPublicFormsInputModel,
   submitFormResponseInputModel,
   type GetPublicFormInput,
   type GetPublicFormOutput,
+  type ListPublicFormsInput,
+  type ListPublicFormsOutput,
+  type PublicFormListItem,
   type PublicFormRecord,
   type SubmitFormResponseInput,
   type SubmitFormResponseOutput,
@@ -100,11 +106,49 @@ export async function getPublicForm(payload: GetPublicFormInput): Promise<GetPub
   };
 }
 
+export async function listPublicForms(payload: ListPublicFormsInput): Promise<ListPublicFormsOutput> {
+  const { limit } = await listPublicFormsInputModel.parseAsync(payload);
+
+  const rows = await db
+    .select({
+      form: formsTable,
+      username: usersTable.username,
+    })
+    .from(formsTable)
+    .innerJoin(usersTable, eq(formsTable.userId, usersTable.id))
+    .where(and(eq(formsTable.status, "published"), eq(formsTable.visibility, "public")))
+    .orderBy(desc(formsTable.updatedAt))
+    .limit(limit);
+
+  return rows.map(
+    (row): PublicFormListItem => ({
+      id: row.form.id,
+      username: row.username,
+      title: row.form.title,
+      description: row.form.description,
+      slug: row.form.slug,
+      acceptingResponses: row.form.closedAt === null,
+      updatedAt: row.form.updatedAt ?? null,
+    }),
+  );
+}
+
 export async function submitFormResponse(
   payload: SubmitFormResponseInput,
   options?: { respondentIp?: string },
 ): Promise<SubmitFormResponseOutput> {
-  const { username, slug, answers } = await submitFormResponseInputModel.parseAsync(payload);
+  const parsed = await submitFormResponseInputModel.parseAsync(payload);
+  const { username, slug, answers, _hpWebsite } = parsed;
+
+  if (_hpWebsite?.trim()) {
+    const { form } = await loadPublishedFormContext(username, slug);
+    return {
+      success: true,
+      responseId: randomUUID(),
+      thankYouMessage: form.thankYouMessage ?? "Thank you for your response!",
+    };
+  }
+
   const { form, fields } = await loadPublishedFormContext(username, slug);
 
   if (form.closedAt !== null) {

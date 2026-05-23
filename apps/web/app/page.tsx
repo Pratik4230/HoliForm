@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, BarChart3, Palette, Zap } from "lucide-react";
+import { FeaturedPublicForms } from "~/components/forms/featured-public-forms";
 import { SiteHeader } from "~/components/layout/site-header";
 import { Button } from "~/components/ui/button";
 
@@ -60,6 +61,17 @@ export default function HomePage() {
             ),
           )}
         </div>
+      </section>
+
+      {/* ── Featured public forms ── */}
+      <section className="mx-auto max-w-5xl px-4 pb-20">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold tracking-tight">Explore public forms</h2>
+          <p className="mt-2 text-muted-foreground">
+            See what creators are sharing — open a form and fill it in seconds.
+          </p>
+        </div>
+        <FeaturedPublicForms limit={6} />
       </section>
 
       {/* ── Features ── */}

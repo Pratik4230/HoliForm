@@ -41,6 +41,12 @@ export function usePublicForm(username: string, slug: string) {
   return trpc.forms.getPublicForm.useQuery({ username, slug });
 }
 
+export type PublicFormListItem = RouterOutputs["forms"]["listPublic"][number];
+
+export function useListPublicForms(limit = 24) {
+  return trpc.forms.listPublic.useQuery({ limit });
+}
+
 // ——— Creator mutations ———
 
 export function useCreateForm(options?: {
