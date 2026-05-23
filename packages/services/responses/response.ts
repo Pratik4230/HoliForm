@@ -17,6 +17,8 @@ import {
   type ResponseListItem,
 } from "@repo/validators/forms";
 
+import { API_ERROR_CODES } from "@repo/validators/api-errors";
+import { AppServiceError } from "../errors";
 import { getOwnedFormOrThrow } from "../forms/ownership";
 import { mapFormFieldRecord } from "../forms/mappers";
 
@@ -243,7 +245,7 @@ export async function getResponseById(
 
   const response = rows[0];
   if (!response) {
-    throw new Error("Response not found");
+    throw new AppServiceError("Response not found", API_ERROR_CODES.RESPONSE_NOT_FOUND);
   }
 
   const answersByResponse = await loadAnswersForResponses([responseId]);

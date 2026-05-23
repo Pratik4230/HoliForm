@@ -6,6 +6,7 @@ import {
   formResponsesTable,
 } from "@repo/database/models/formResponse";
 import { usersTable } from "@repo/database/models/user";
+import { API_ERROR_CODES } from "@repo/validators/api-errors";
 import type { FormFieldRecord } from "@repo/validators/forms";
 import {
   getPublicFormInputModel,
@@ -17,6 +18,7 @@ import {
   type SubmitFormResponseOutput,
 } from "@repo/validators/forms";
 
+import { AppServiceError } from "../errors";
 import { buildSubmissionSchemaFromFields } from "./buildSubmissionSchema";
 import { mapFormFieldRecord } from "./mappers";
 
@@ -37,37 +39,50 @@ function mapPublicFormRecord(
   };
 }
 
-async function loadPublishedFormContext(username: string, slug: string) {
-  const rows = await db
-    .select({
-      form: formsTable,
-      field: formFieldsTable,
-      username: usersTable.username,
-    })
-    .from(formsTable)
-    .innerJoin(usersTable, eq(formsTable.userId, usersTable.id))
-    .leftJoin(formFieldsTable, eq(formFieldsTable.formId, formsTable.id))
-    .where(
-      and(
-        eq(usersTable.username, username),
-        eq(formsTable.slug, slug),
-        eq(formsTable.status, "published"),
-      ),
-    )
-    .orderBy(asc(formFieldsTable.index));
+async function getPublishedFormRow(username: string, slug: string) {
+  const creatorRows = await db
+    .select({ id: usersTable.id, username: usersTable.username })
+    .from(usersTable)
+    .where(eq(usersTable.username, username))
+    .limit(1);
 
-  const firstRow = rows[0];
-  if (!firstRow) {
-    throw new Error("Form is not available");
+  const creator = creatorRows[0];
+  if (!creator) {
+    throw new AppServiceError("Form not found", API_ERROR_CODES.FORM_NOT_FOUND);
   }
 
-  const fields = rows
-    .filter((row) => row.field !== null)
-    .map((row) => mapFormFieldRecord(row.field!));
+  const formRows = await db
+    .select()
+    .from(formsTable)
+    .where(and(eq(formsTable.userId, creator.id), eq(formsTable.slug, slug)))
+    .limit(1);
+
+  const form = formRows[0];
+  if (!form) {
+    throw new AppServiceError("Form not found", API_ERROR_CODES.FORM_NOT_FOUND);
+  }
+
+  if (form.status !== "published") {
+    throw new AppServiceError("This form is not published", API_ERROR_CODES.FORM_NOT_PUBLISHED);
+  }
+
+  return { form, username: creator.username };
+}
+
+async function loadPublishedFormContext(username: string, slug: string) {
+  const { form, username: creatorUsername } = await getPublishedFormRow(username, slug);
+
+  const fieldRows = await db
+    .select()
+    .from(formFieldsTable)
+    .where(eq(formFieldsTable.formId, form.id))
+    .orderBy(asc(formFieldsTable.index));
+
+  const fields = fieldRows.map((row) => mapFormFieldRecord(row));
 
   return {
-    form: firstRow.form,
-    username: firstRow.username,
+    form,
+    username: creatorUsername,
     fields,
   };
 }
@@ -93,7 +108,10 @@ export async function submitFormResponse(
   const { form, fields } = await loadPublishedFormContext(username, slug);
 
   if (form.closedAt !== null) {
-    throw new Error("Form is not accepting responses");
+    throw new AppServiceError(
+      "Form is not accepting responses",
+      API_ERROR_CODES.FORM_NOT_ACCEPTING_RESPONSES,
+    );
   }
 
   const submissionSchema = buildSubmissionSchemaFromFields(fields);
@@ -115,13 +133,13 @@ export async function submitFormResponse(
 
     const response = insertedResponses[0];
     if (!response) {
-      throw new Error("Failed to save response");
+      throw new AppServiceError("Failed to save response", API_ERROR_CODES.INTERNAL_ERROR);
     }
 
     const answerRows = Object.entries(validatedAnswers).map(([labelKey, value]) => {
       const field = fieldByLabelKey.get(labelKey);
       if (!field) {
-        throw new Error("Invalid answer field");
+        throw new AppServiceError("Invalid answer field", API_ERROR_CODES.VALIDATION_ERROR);
       }
 
       return {

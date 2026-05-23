@@ -11,6 +11,8 @@ import {
   type UpsertFormFieldInput,
 } from "@repo/validators/forms";
 
+import { API_ERROR_CODES } from "@repo/validators/api-errors";
+import { AppServiceError } from "../errors";
 import { mapFormFieldRecord } from "./mappers";
 import { getOwnedFieldOrThrow, getOwnedFormOrThrow } from "./ownership";
 
@@ -70,7 +72,10 @@ export async function upsertFormField(
   await getOwnedFormOrThrow(userId, formId);
 
   if (await labelKeyExistsOnForm(formId, labelKey, fieldId)) {
-    throw new Error("A field with this label key already exists on this form");
+    throw new AppServiceError(
+      "A field with this label key already exists on this form",
+      API_ERROR_CODES.FORM_FIELD_LABEL_KEY_CONFLICT,
+    );
   }
 
   const fieldIndex = index ?? (await getNextFieldIndex(formId));
@@ -94,7 +99,7 @@ export async function upsertFormField(
 
     const field = updated[0];
     if (!field) {
-      throw new Error("Form field not found");
+      throw new AppServiceError("Form field not found", API_ERROR_CODES.FORM_FIELD_NOT_FOUND);
     }
 
     return mapFormFieldRecord(field);
@@ -118,7 +123,7 @@ export async function upsertFormField(
 
   const field = inserted[0];
   if (!field) {
-    throw new Error("Failed to create form field");
+    throw new AppServiceError("Failed to create form field", API_ERROR_CODES.INTERNAL_ERROR);
   }
 
   return mapFormFieldRecord(field);
@@ -153,7 +158,7 @@ export async function reorderFormField(
 
   const field = updated[0];
   if (!field) {
-    throw new Error("Form field not found");
+    throw new AppServiceError("Form field not found", API_ERROR_CODES.FORM_FIELD_NOT_FOUND);
   }
 
   return mapFormFieldRecord(field);

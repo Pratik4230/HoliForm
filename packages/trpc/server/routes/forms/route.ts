@@ -1,7 +1,7 @@
-import { TRPCError } from "@trpc/server";
-
 import { formService } from "../../services";
 import { protectedProcedure, publicProcedure, router } from "../../trpc";
+import { mapServiceError } from "../../utils/map-service-error";
+import { protectedOpenApiMeta, publicOpenApiMeta } from "../../utils/openapi-meta";
 import { generatePath } from "../../utils/path-generator";
 import {
   createFormInputModel,
@@ -31,77 +31,21 @@ import {
 const TAGS = ["Forms"];
 const getPath = generatePath("/forms");
 
-function handleFormServiceError(error: unknown): never {
-  if (!(error instanceof Error)) {
-    throw error;
-  }
-
-  if (
-    error.message === "Form not found" ||
-    error.message === "Form field not found" ||
-    error.message === "Form is not available"
-  ) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: error.message,
-    });
-  }
-
-  if (error.message === "Form is not accepting responses") {
-    throw new TRPCError({
-      code: "PRECONDITION_FAILED",
-      message: error.message,
-    });
-  }
-
-  if (error.name === "ZodError") {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Invalid form answers",
-      cause: error,
-    });
-  }
-
-  if (
-    error.message === "A form with this slug already exists for your account" ||
-    error.message === "A field with this label key already exists on this form"
-  ) {
-    throw new TRPCError({
-      code: "CONFLICT",
-      message: error.message,
-    });
-  }
-
-  throw error;
-}
-
 export const formsRouter = router({
   createForm: protectedProcedure
-    .meta({
-      openapi: {
-        method: "POST",
-        path: getPath("/createForm"),
-        tags: TAGS,
-      },
-    })
+    .meta(protectedOpenApiMeta("POST", getPath("/createForm"), TAGS))
     .input(createFormInputModel)
     .output(formRecordOutputModel)
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.createForm(ctx.user.id, input);
       } catch (error) {
-        handleFormServiceError(error);
+        mapServiceError(error);
       }
     }),
 
   listForms: protectedProcedure
-    .meta({
-      openapi: {
-        method: "GET",
-        path: getPath("/listForms"),
-        tags: TAGS,
-      },
-    })
+    .meta(protectedOpenApiMeta("GET", getPath("/listForms"), TAGS))
     .input(listFormsInputModel)
     .output(listFormsOutputModel)
     .query(async ({ ctx }) => {
@@ -109,211 +53,139 @@ export const formsRouter = router({
     }),
 
   getFormById: protectedProcedure
-    .meta({
-      openapi: {
-        method: "GET",
-        path: getPath("/getFormById"),
-        tags: TAGS,
-      },
-    })
+    .meta(protectedOpenApiMeta("GET", getPath("/getFormById"), TAGS))
     .input(getFormByIdInputModel)
     .output(getFormByIdOutputModel)
     .query(async ({ ctx, input }) => {
       try {
         return await formService.getFormById(ctx.user.id, input);
       } catch (error) {
-        handleFormServiceError(error);
+        mapServiceError(error);
       }
     }),
 
   updateForm: protectedProcedure
-    .meta({
-      openapi: {
-        method: "PATCH",
-        path: getPath("/updateForm"),
-        tags: TAGS,
-      },
-    })
+    .meta(protectedOpenApiMeta("PATCH", getPath("/updateForm"), TAGS))
     .input(updateFormInputModel)
     .output(formRecordOutputModel)
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.updateForm(ctx.user.id, input);
       } catch (error) {
-        handleFormServiceError(error);
+        mapServiceError(error);
       }
     }),
 
   deleteForm: protectedProcedure
-    .meta({
-      openapi: {
-        method: "DELETE",
-        path: getPath("/deleteForm"),
-        tags: TAGS,
-      },
-    })
+    .meta(protectedOpenApiMeta("DELETE", getPath("/deleteForm"), TAGS))
     .input(deleteFormInputModel)
     .output(deleteFormOutputModel)
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.deleteForm(ctx.user.id, input);
       } catch (error) {
-        handleFormServiceError(error);
+        mapServiceError(error);
       }
     }),
 
   publishForm: protectedProcedure
-    .meta({
-      openapi: {
-        method: "POST",
-        path: getPath("/publishForm"),
-        tags: TAGS,
-      },
-    })
+    .meta(protectedOpenApiMeta("POST", getPath("/publishForm"), TAGS))
     .input(publishFormInputModel)
     .output(formRecordOutputModel)
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.publishForm(ctx.user.id, input);
       } catch (error) {
-        handleFormServiceError(error);
+        mapServiceError(error);
       }
     }),
 
   unpublishForm: protectedProcedure
-    .meta({
-      openapi: {
-        method: "POST",
-        path: getPath("/unpublishForm"),
-        tags: TAGS,
-      },
-    })
+    .meta(protectedOpenApiMeta("POST", getPath("/unpublishForm"), TAGS))
     .input(unpublishFormInputModel)
     .output(formRecordOutputModel)
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.unpublishForm(ctx.user.id, input);
       } catch (error) {
-        handleFormServiceError(error);
+        mapServiceError(error);
       }
     }),
 
   setFormVisibility: protectedProcedure
-    .meta({
-      openapi: {
-        method: "PATCH",
-        path: getPath("/setFormVisibility"),
-        tags: TAGS,
-      },
-    })
+    .meta(protectedOpenApiMeta("PATCH", getPath("/setFormVisibility"), TAGS))
     .input(setFormVisibilityInputModel)
     .output(formRecordOutputModel)
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.setFormVisibility(ctx.user.id, input);
       } catch (error) {
-        handleFormServiceError(error);
+        mapServiceError(error);
       }
     }),
 
   setFormAcceptingResponses: protectedProcedure
-    .meta({
-      openapi: {
-        method: "PATCH",
-        path: getPath("/setFormAcceptingResponses"),
-        tags: TAGS,
-      },
-    })
+    .meta(protectedOpenApiMeta("PATCH", getPath("/setFormAcceptingResponses"), TAGS))
     .input(setFormAcceptingResponsesInputModel)
     .output(formRecordOutputModel)
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.setFormAcceptingResponses(ctx.user.id, input);
       } catch (error) {
-        handleFormServiceError(error);
+        mapServiceError(error);
       }
     }),
 
   upsertFormField: protectedProcedure
-    .meta({
-      openapi: {
-        method: "POST",
-        path: getPath("/upsertFormField"),
-        tags: TAGS,
-      },
-    })
+    .meta(protectedOpenApiMeta("POST", getPath("/upsertFormField"), TAGS))
     .input(upsertFormFieldInputModel)
     .output(formFieldOutputModel)
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.upsertFormField(ctx.user.id, input);
       } catch (error) {
-        handleFormServiceError(error);
+        mapServiceError(error);
       }
     }),
 
   deleteFormField: protectedProcedure
-    .meta({
-      openapi: {
-        method: "DELETE",
-        path: getPath("/deleteFormField"),
-        tags: TAGS,
-      },
-    })
+    .meta(protectedOpenApiMeta("DELETE", getPath("/deleteFormField"), TAGS))
     .input(deleteFormFieldInputModel)
     .output(deleteFormFieldOutputModel)
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.deleteFormField(ctx.user.id, input);
       } catch (error) {
-        handleFormServiceError(error);
+        mapServiceError(error);
       }
     }),
 
   reorderFormField: protectedProcedure
-    .meta({
-      openapi: {
-        method: "PATCH",
-        path: getPath("/reorderFormField"),
-        tags: TAGS,
-      },
-    })
+    .meta(protectedOpenApiMeta("PATCH", getPath("/reorderFormField"), TAGS))
     .input(reorderFormFieldInputModel)
     .output(formFieldOutputModel)
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.reorderFormField(ctx.user.id, input);
       } catch (error) {
-        handleFormServiceError(error);
+        mapServiceError(error);
       }
     }),
 
   getPublicForm: publicProcedure
-    .meta({
-      openapi: {
-        method: "GET",
-        path: getPath("/getPublicForm"),
-        tags: TAGS,
-      },
-    })
+    .meta(publicOpenApiMeta("GET", getPath("/getPublicForm"), TAGS))
     .input(getPublicFormInputModel)
     .output(getPublicFormOutputModel)
     .query(async ({ input }) => {
       try {
         return await formService.getPublicForm(input);
       } catch (error) {
-        handleFormServiceError(error);
+        mapServiceError(error);
       }
     }),
 
   submitFormResponse: publicProcedure
-    .meta({
-      openapi: {
-        method: "POST",
-        path: getPath("/submitFormResponse"),
-        tags: TAGS,
-      },
-    })
+    .meta(publicOpenApiMeta("POST", getPath("/submitFormResponse"), TAGS))
     .input(submitFormResponseInputModel)
     .output(submitFormResponseOutputModel)
     .mutation(async ({ ctx, input }) => {
@@ -322,7 +194,7 @@ export const formsRouter = router({
           respondentIp: ctx.respondentIp,
         });
       } catch (error) {
-        handleFormServiceError(error);
+        mapServiceError(error);
       }
     }),
 });

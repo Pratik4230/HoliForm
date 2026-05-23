@@ -22,6 +22,7 @@ import {
 } from "~/components/ui/select";
 import { Spinner } from "~/components/ui/spinner";
 import { Textarea } from "~/components/ui/textarea";
+import { getPublicFormErrorMessage } from "~/lib/api-error";
 
 type FormField = PublicFormOutput["fields"][number];
 
@@ -232,7 +233,9 @@ export function PublicFormFill({ username, slug }: PublicFormFillProps) {
         <CardHeader>
           <CardTitle>Form unavailable</CardTitle>
           <CardDescription>
-            This form does not exist, is not published, or cannot be opened.
+            {query.isError
+              ? getPublicFormErrorMessage(query.error)
+              : "This form does not exist, is not published, or cannot be opened."}
           </CardDescription>
         </CardHeader>
       </Card>

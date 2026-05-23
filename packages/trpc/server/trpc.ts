@@ -1,5 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { OpenApiMeta } from "trpc-to-openapi";
+import { isAppServiceError } from "@repo/services/errors";
 
 import { createContext } from "./context";
 import { userService } from "./services";
@@ -8,7 +9,22 @@ import { getAutheticationCookie } from "./utils/cookie";
 export const tRPCContext = initTRPC
   .meta<OpenApiMeta>()
   .context<typeof createContext>()
-  .create({});
+  .create({
+    errorFormatter({ shape, error }) {
+      const cause = error.cause;
+      if (isAppServiceError(cause)) {
+        return {
+          ...shape,
+          data: {
+            ...shape.data,
+            apiCode: cause.code,
+          },
+        };
+      }
+
+      return shape;
+    },
+  });
 
 export const router = tRPCContext.router;
 

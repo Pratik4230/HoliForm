@@ -22,6 +22,8 @@ import {
   type UpdateFormInput,
 } from "@repo/validators/forms";
 
+import { API_ERROR_CODES } from "@repo/validators/api-errors";
+import { AppServiceError } from "../errors";
 import { mapFormFieldRecord, mapFormRecord } from "./mappers";
 import { getOwnedFormOrThrow } from "./ownership";
 import { ensureUniqueSlug, slugExistsForUser, slugify } from "./slug";
@@ -34,7 +36,10 @@ export async function createForm(userId: string, payload: CreateFormInput): Prom
 
   if (slugInput) {
     if (await slugExistsForUser(userId, baseSlug)) {
-      throw new Error("A form with this slug already exists for your account");
+      throw new AppServiceError(
+        "A form with this slug already exists for your account",
+        API_ERROR_CODES.FORM_SLUG_CONFLICT,
+      );
     }
   }
 
@@ -53,7 +58,7 @@ export async function createForm(userId: string, payload: CreateFormInput): Prom
 
   const form = inserted[0];
   if (!form) {
-    throw new Error("Failed to create form");
+    throw new AppServiceError("Failed to create form", API_ERROR_CODES.INTERNAL_ERROR);
   }
 
   return mapFormRecord(form);
@@ -87,7 +92,7 @@ export async function getFormById(
 
   const firstRow = rows[0];
   if (!firstRow) {
-    throw new Error("Form not found");
+    throw new AppServiceError("Form not found", API_ERROR_CODES.FORM_NOT_FOUND);
   }
 
   return {
@@ -109,7 +114,10 @@ export async function updateForm(userId: string, payload: UpdateFormInput): Prom
     themeId === undefined &&
     thankYouMessage === undefined
   ) {
-    throw new Error("At least one field to update is required");
+    throw new AppServiceError(
+      "At least one field to update is required",
+      API_ERROR_CODES.UPDATE_REQUIRES_FIELDS,
+    );
   }
 
   await getOwnedFormOrThrow(userId, formId);
@@ -131,7 +139,10 @@ export async function updateForm(userId: string, payload: UpdateFormInput): Prom
   if (slugInput !== undefined) {
     const slug = slugify(slugInput);
     if (await slugExistsForUser(userId, slug, formId)) {
-      throw new Error("A form with this slug already exists for your account");
+      throw new AppServiceError(
+        "A form with this slug already exists for your account",
+        API_ERROR_CODES.FORM_SLUG_CONFLICT,
+      );
     }
     updates.slug = slug;
   }
@@ -144,7 +155,7 @@ export async function updateForm(userId: string, payload: UpdateFormInput): Prom
 
   const form = updated[0];
   if (!form) {
-    throw new Error("Failed to update form");
+    throw new AppServiceError("Failed to update form", API_ERROR_CODES.INTERNAL_ERROR);
   }
 
   return mapFormRecord(form);
@@ -176,7 +187,7 @@ export async function publishForm(userId: string, payload: PublishFormInput): Pr
 
   const form = updated[0];
   if (!form) {
-    throw new Error("Failed to publish form");
+    throw new AppServiceError("Failed to publish form", API_ERROR_CODES.INTERNAL_ERROR);
   }
 
   return mapFormRecord(form);
@@ -197,7 +208,7 @@ export async function unpublishForm(
 
   const form = updated[0];
   if (!form) {
-    throw new Error("Failed to unpublish form");
+    throw new AppServiceError("Failed to unpublish form", API_ERROR_CODES.INTERNAL_ERROR);
   }
 
   return mapFormRecord(form);
@@ -218,7 +229,10 @@ export async function setFormVisibility(
 
   const form = updated[0];
   if (!form) {
-    throw new Error("Failed to update form visibility");
+    throw new AppServiceError(
+      "Failed to update form visibility",
+      API_ERROR_CODES.INTERNAL_ERROR,
+    );
   }
 
   return mapFormRecord(form);
@@ -241,7 +255,10 @@ export async function setFormAcceptingResponses(
 
   const form = updated[0];
   if (!form) {
-    throw new Error("Failed to update form response status");
+    throw new AppServiceError(
+      "Failed to update form response status",
+      API_ERROR_CODES.INTERNAL_ERROR,
+    );
   }
 
   return mapFormRecord(form);
