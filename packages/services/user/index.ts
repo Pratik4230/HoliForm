@@ -2,15 +2,30 @@ import { randomBytes, createHmac } from "crypto";
 import * as JWT from "jsonwebtoken";
 import { db, eq } from "@repo/database";
 import { usersTable } from "@repo/database/models/user";
+import { inngest, INNGEST_EVENTS } from "@repo/inngest";
 import {
   createUserWithEmailAndPasswordInputModel,
   generateJWTTokenInputModel,
   type CreateUserWithEmailAndPasswordInput,
   type GenerateJWTTokenInput,
+  resendEmailVerificationOtpInputModel,
+  type ResendEmailVerificationOtpInput,
+  type UpdateEmailNotificationsInput,
+  updateEmailNotificationsInputModel,
   signInUserWithEmailAndPasswordInputModel,
   type SignInUserWithEmailAndPasswordInput,
+  verifyEmailWithOtpInputModel,
+  type VerifyEmailWithOtpInput,
 } from "@repo/validators/auth";
+import { API_ERROR_CODES } from "@repo/validators/api-errors";
+
+import { AppServiceError } from "../errors";
 import { env } from "../env";
+import {
+  generateOtpCode,
+  storeEmailVerificationOtp,
+  verifyEmailVerificationOtp,
+} from "./otp";
 
 class UserService {
   private async getUserByEmail(email: string) {
@@ -32,10 +47,6 @@ class UserService {
     return { token };
   }
 
-  private async generateHash(salt: string, password: string) {
-    return createHmac("sha256", salt).update(password).digest("hex");
-  }
-
   private async verifyUserToken(token: string): Promise<GenerateJWTTokenInput> {
     try {
       const verificationResult = JWT.verify(token, env.JWT_SECRET) as GenerateJWTTokenInput;
@@ -53,6 +64,7 @@ class UserService {
         email: usersTable.email,
         fullName: usersTable.fullName,
         profileImageUrl: usersTable.profileImageUrl,
+        emailNotificationsEnabled: usersTable.emailNotificationsEnabled,
       })
       .from(usersTable)
       .where(eq(usersTable.id, id));
@@ -63,6 +75,24 @@ class UserService {
 
     return userRecord;
   }
+
+  private async queueVerificationOtp(params: {
+    userId: string;
+    email: string;
+    fullName: string;
+  }) {
+    const code = generateOtpCode();
+    await storeEmailVerificationOtp(params.userId, code);
+    await inngest.send({
+      name: INNGEST_EVENTS.SEND_VERIFICATION_OTP,
+      data: {
+        email: params.email,
+        fullName: params.fullName,
+        code,
+      },
+    });
+  }
+
   public async createUserWithEmailAndPassword(payload: CreateUserWithEmailAndPasswordInput) {
     const { username, fullName, email, password } =
       await createUserWithEmailAndPasswordInputModel.parseAsync(payload);
@@ -81,24 +111,88 @@ class UserService {
     const hash = await this.generateHash(salt, password);
     const userInsertResult = await db
       .insert(usersTable)
-      .values({ username, email, fullName, password: hash, salt })
+      .values({
+        username,
+        email,
+        fullName,
+        password: hash,
+        salt,
+        emailVerified: false,
+      })
       .returning({
         id: usersTable.id,
       });
 
-    if (userInsertResult.length === 0 || !userInsertResult || !userInsertResult[0]) {
+    if (userInsertResult.length === 0 || !userInsertResult[0]) {
       throw new Error("Failed to create user");
     }
 
     const userId = userInsertResult[0].id;
 
-    // generate jwt token
-    const { token } = await this.generateJWTToken({ id: userId });
+    await this.queueVerificationOtp({ userId, email, fullName });
 
     return {
       id: userId,
-      token,
+      email,
+      requiresVerification: true as const,
     };
+  }
+
+  public async verifyEmailWithOtp(payload: VerifyEmailWithOtpInput) {
+    const { email, code } = await verifyEmailWithOtpInputModel.parseAsync(payload);
+    const result = await verifyEmailVerificationOtp(email, code);
+
+    if (!result.ok) {
+      if (result.reason === "already_verified") {
+        const { token } = await this.generateJWTToken({ id: result.userId });
+        return { id: result.userId, token };
+      }
+      throw new AppServiceError(
+        "Invalid or expired verification code",
+        API_ERROR_CODES.AUTH_OTP_INVALID,
+      );
+    }
+
+    const { token } = await this.generateJWTToken({ id: result.userId });
+    return { id: result.userId, token };
+  }
+
+  public async updateEmailNotifications(userId: string, payload: UpdateEmailNotificationsInput) {
+    const { enabled } = await updateEmailNotificationsInputModel.parseAsync(payload);
+
+    const updated = await db
+      .update(usersTable)
+      .set({ emailNotificationsEnabled: enabled })
+      .where(eq(usersTable.id, userId))
+      .returning({ emailNotificationsEnabled: usersTable.emailNotificationsEnabled });
+
+    const row = updated[0];
+    if (!row) {
+      throw new Error(`user with ID ${userId} does not exists`);
+    }
+
+    return { emailNotificationsEnabled: row.emailNotificationsEnabled };
+  }
+
+  public async resendEmailVerificationOtp(payload: ResendEmailVerificationOtpInput) {
+    const { email } = await resendEmailVerificationOtpInputModel.parseAsync(payload);
+    const user = await this.getUserByEmail(email);
+
+    if (!user) {
+      return { success: true };
+    }
+
+    if (user.emailVerified) {
+      return { success: true };
+    }
+
+    await this.queueVerificationOtp({
+      userId: user.id,
+      email: user.email,
+      fullName: user.fullName,
+    });
+
+    return { success: true };
   }
 
   public async signInUserWithEmailAndPassword(payload: SignInUserWithEmailAndPasswordInput) {
@@ -108,6 +202,13 @@ class UserService {
     const existingUser = await this.getUserByEmail(email);
     if (!existingUser) {
       throw new Error("User with this email does not exist");
+    }
+
+    if (!existingUser.emailVerified) {
+      throw new AppServiceError(
+        "Please verify your email before signing in",
+        API_ERROR_CODES.AUTH_EMAIL_NOT_VERIFIED,
+      );
     }
 
     if (!existingUser.password || !existingUser.salt) {
@@ -126,6 +227,10 @@ class UserService {
       id: existingUser.id,
       token: token.token,
     };
+  }
+
+  private async generateHash(salt: string, password: string) {
+    return createHmac("sha256", salt).update(password).digest("hex");
   }
 
   public async verifyAndDecodeToken(token: string) {

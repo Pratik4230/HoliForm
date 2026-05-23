@@ -24,6 +24,8 @@ import {
   type SubmitFormResponseOutput,
 } from "@repo/validators/forms";
 
+import { inngest, INNGEST_EVENTS } from "@repo/inngest";
+
 import { AppServiceError } from "../errors";
 import { buildSubmissionSchemaFromFields } from "./buildSubmissionSchema";
 import { mapFormFieldRecord } from "./mappers";
@@ -198,6 +200,11 @@ export async function submitFormResponse(
     }
 
     return response;
+  });
+
+  await inngest.send({
+    name: INNGEST_EVENTS.FORM_RESPONSE_SUBMITTED,
+    data: { responseId: result.id },
   });
 
   return {

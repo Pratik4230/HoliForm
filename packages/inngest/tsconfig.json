@@ -1,0 +1,10 @@
+{
+  "extends": ["@repo/typescript-config/node.json"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@repo/email": ["../email/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

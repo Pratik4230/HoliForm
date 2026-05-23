@@ -4,11 +4,12 @@
   "scripts": {
     "build": "dotenv -- turbo build",
     "dev": "dotenv -- turbo dev",
+    "dev:inngest": "dotenv -- npx inngest-cli@latest dev -u http://localhost:8000/api/inngest",
     "db:generate": "dotenv -- turbo db:generate",
     "db:migrate": "dotenv -- turbo db:migrate",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "check-types": "tsc -p tsconfig.json && turbo run check-types"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

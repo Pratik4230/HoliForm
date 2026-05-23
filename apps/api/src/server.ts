@@ -2,6 +2,8 @@ import express from "express";
 import { logger } from "@repo/logger";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { serve } from "inngest/express";
+import { inngest, inngestFunctions } from "@repo/inngest";
 
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { generateOpenApiDocument, createOpenApiExpressMiddleware } from "trpc-to-openapi";
@@ -34,6 +36,14 @@ if (env.NODE_ENV !== "prod") {
 
 app.use(cookieParser());
 app.use(express.json());
+
+app.use(
+  "/api/inngest",
+  serve({
+    client: inngest,
+    functions: inngestFunctions,
+  }),
+);
 
 app.get("/", (req, res) => {
   return res.json({ message: "Streamyst is up and running..." });

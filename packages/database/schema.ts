@@ -1,4 +1,5 @@
 export * from "./models/user";
+export * from "./models/emailVerificationOtp";
 export * from "./models/formTheme";
 export * from "./models/form";
 export * from "./models/formField";

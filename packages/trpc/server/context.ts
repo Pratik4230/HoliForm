@@ -14,6 +14,7 @@ export type AuthenticatedUser = {
   email: string;
   fullName: string;
   profileImageUrl: string | null;
+  emailNotificationsEnabled: boolean;
 };
 
 export type AuthenticatedTRPCContext = TRPCContext & {

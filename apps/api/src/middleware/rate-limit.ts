@@ -16,7 +16,9 @@ export function isAuthMutationRequest(req: Request): boolean {
   const path = getRoutePath(req);
   return (
     path.includes("signInUserWithEmailAndPassword") ||
-    path.includes("createUserWithEmailAndPasswordInput")
+    path.includes("createUserWithEmailAndPasswordInput") ||
+    path.includes("verifyEmailWithOtp") ||
+    path.includes("resendEmailVerificationOtp")
   );
 }
 

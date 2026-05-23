@@ -19,6 +19,7 @@ export const usersTable = pgTable(
 
   email: varchar("email", { length: 255 }).notNull().unique(),
   emailVerified: boolean("email_verified").default(false),
+  emailNotificationsEnabled: boolean("email_notifications_enabled").default(true).notNull(),
 
   profileImageUrl: text("profile_image_url"),
 

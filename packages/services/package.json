@@ -2,6 +2,9 @@
   "name": "@repo/services",
   "version": "1.0.0",
   "private": true,
+  "scripts": {
+    "check-types": "tsc --noEmit -p tsconfig.json"
+  },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
@@ -11,6 +14,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@repo/inngest": "workspace:*",
     "@repo/validators": "workspace:*",
     "@repo/database": "workspace:*",
     "@repo/logger": "workspace:*",

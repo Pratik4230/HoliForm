@@ -15,16 +15,26 @@ import {
   createUserWithEmailAndPasswordOutputModel,
   getLoggedInUserInfoInputModel,
   getLoggedInUserInfoOutputModel,
+  resendEmailVerificationOtpInputModel,
+  resendEmailVerificationOtpOutputModel,
+  updateEmailNotificationsInputModel,
+  updateEmailNotificationsOutputModel,
   signInUserWithEmailAndPasswordInputModel,
   signInUserWithEmailAndPasswordOutputModel,
   signOutInputModel,
   signOutOutputModel,
+  verifyEmailWithOtpInputModel,
+  verifyEmailWithOtpOutputModel,
 } from "@repo/validators/auth";
 
 const TAGS = ["Authentication"];
 const getPath = generatePath("/authentication");
 
 function mapAuthServiceError(error: unknown): never {
+  if (error instanceof AppServiceError) {
+    mapServiceError(error);
+  }
+
   if (error instanceof Error) {
     if (
       error.message === "User with this email already exists" ||
@@ -48,11 +58,35 @@ export const authRouter = router({
     .meta(publicOpenApiMeta("POST", getPath("/createUserWithEmailAndPasswordInput"), TAGS))
     .input(createUserWithEmailAndPasswordInputModel)
     .output(createUserWithEmailAndPasswordOutputModel)
+    .mutation(async ({ input }) => {
+      try {
+        return await userService.createUserWithEmailAndPassword(input);
+      } catch (error) {
+        mapAuthServiceError(error);
+      }
+    }),
+
+  verifyEmailWithOtp: publicProcedure
+    .meta(publicOpenApiMeta("POST", getPath("/verifyEmailWithOtp"), TAGS))
+    .input(verifyEmailWithOtpInputModel)
+    .output(verifyEmailWithOtpOutputModel)
     .mutation(async ({ input, ctx }) => {
       try {
-        const { id, token } = await userService.createUserWithEmailAndPassword(input);
+        const { id, token } = await userService.verifyEmailWithOtp(input);
         setAutheticationCookie(ctx, token);
         return { id, token };
+      } catch (error) {
+        mapAuthServiceError(error);
+      }
+    }),
+
+  resendEmailVerificationOtp: publicProcedure
+    .meta(publicOpenApiMeta("POST", getPath("/resendEmailVerificationOtp"), TAGS))
+    .input(resendEmailVerificationOtpInputModel)
+    .output(resendEmailVerificationOtpOutputModel)
+    .mutation(async ({ input }) => {
+      try {
+        return await userService.resendEmailVerificationOtp(input);
       } catch (error) {
         mapAuthServiceError(error);
       }
@@ -81,8 +115,21 @@ export const authRouter = router({
     .input(getLoggedInUserInfoInputModel)
     .output(getLoggedInUserInfoOutputModel)
     .query(async ({ ctx }) => {
-      const { id, username, email, fullName, profileImageUrl } = ctx.user;
-      return { id, username, email, fullName, profileImageUrl };
+      const { id, username, email, fullName, profileImageUrl, emailNotificationsEnabled } =
+        ctx.user;
+      return { id, username, email, fullName, profileImageUrl, emailNotificationsEnabled };
+    }),
+
+  updateEmailNotifications: protectedProcedure
+    .meta(protectedOpenApiMeta("POST", getPath("/updateEmailNotifications"), TAGS))
+    .input(updateEmailNotificationsInputModel)
+    .output(updateEmailNotificationsOutputModel)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await userService.updateEmailNotifications(ctx.user.id, input);
+      } catch (error) {
+        mapAuthServiceError(error);
+      }
     }),
 
   signOut: publicProcedure

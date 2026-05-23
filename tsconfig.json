@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "moduleResolution": "Bundler",
+    "module": "ESNext",
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@repo/inngest": ["packages/inngest/src/index.ts"],
+      "@repo/inngest/*": ["packages/inngest/src/*"],
+      "@repo/email": ["packages/email/src/index.ts"],
+      "@repo/email/*": ["packages/email/src/*"],
+      "@repo/services": ["packages/services"],
+      "@repo/services/*": ["packages/services/*"],
+      "@repo/validators": ["packages/validators/index.ts"],
+      "@repo/validators/*": ["packages/validators/*"],
+      "@repo/database": ["packages/database/index.ts"],
+      "@repo/database/*": ["packages/database/*"],
+      "@repo/logger": ["packages/logger/src/index.ts"],
+      "@repo/trpc/*": ["packages/trpc/*"]
+    }
+  },
+  "include": [
+    "apps/api/src/**/*.ts",
+    "packages/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/dist",
+    "**/.next",
+    "apps/web"
+  ]
+}

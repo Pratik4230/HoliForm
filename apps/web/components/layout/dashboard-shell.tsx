@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, LayoutDashboard, LogOut, Plus } from "lucide-react";
+import { FileText, LayoutDashboard, LogOut, Plus, Settings } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -27,6 +27,7 @@ import { cn } from "~/lib/utils";
 const menuItems = [
   { href: "/dashboard", label: "My forms", icon: LayoutDashboard },
   { href: "/dashboard/forms/new", label: "New form", icon: Plus },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
