@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import {
   ArrowDown,
   ArrowUp,
+  BarChart3,
   Copy,
   ExternalLink,
   Plus,
@@ -344,6 +345,12 @@ export function FormEditor({ formId }: { formId: string }) {
           <p className="text-muted-foreground font-mono text-sm">/{form.slug}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" className="rounded-full" asChild>
+            <Link href={`/dashboard/forms/${formId}/responses`}>
+              <BarChart3 className="size-4" />
+              Responses
+            </Link>
+          </Button>
           {form.status === "published" ? (
             <Button
               variant="outline"
