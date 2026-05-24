@@ -2,11 +2,38 @@ import { z } from "zod";
 
 import { formFieldTypeModel } from "./formField";
 
-export const listResponsesByFormInputModel = z.object({
-  formId: z.uuid().describe("Form id"),
-  page: z.number().int().min(1).default(1).describe("Page number (1-based)"),
-  pageSize: z.number().int().min(1).max(100).default(20).describe("Items per page"),
-});
+export const listResponsesSortModel = z.enum(["newest", "oldest"]);
+
+export type ListResponsesSort = z.infer<typeof listResponsesSortModel>;
+
+export const listResponsesByFormInputModel = z
+  .object({
+    formId: z.uuid().describe("Form id"),
+    page: z.number().int().min(1).default(1).describe("Page number (1-based)"),
+    pageSize: z.number().int().min(1).max(100).default(20).describe("Items per page"),
+    sort: listResponsesSortModel.default("newest").describe("Sort by submission time"),
+    search: z
+      .string()
+      .trim()
+      .min(1)
+      .max(200)
+      .optional()
+      .describe("Search across all answer values"),
+    submittedFrom: z.coerce.date().optional().describe("Include responses on or after this date"),
+    submittedTo: z.coerce.date().optional().describe("Include responses on or before this date"),
+    fieldId: z.uuid().optional().describe("Filter by a specific field id"),
+    fieldValue: z
+      .string()
+      .trim()
+      .min(1)
+      .max(500)
+      .optional()
+      .describe("Match text within the selected field answer"),
+  })
+  .refine((data) => !data.fieldValue || data.fieldId, {
+    message: "fieldId is required when fieldValue is set",
+    path: ["fieldId"],
+  });
 
 export type ListResponsesByFormInput = z.infer<typeof listResponsesByFormInputModel>;
 

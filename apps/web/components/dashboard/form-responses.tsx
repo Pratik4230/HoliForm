@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft,
@@ -54,6 +54,13 @@ import {
   useResponsesByForm,
   type FieldAnalytics,
 } from "~/hooks/api/response";
+import { useDebouncedValue } from "~/hooks/use-debounced-value";
+import {
+  ResponseFilters,
+  emptyResponseFilters,
+  hasActiveResponseFilters,
+  type ResponseFiltersState,
+} from "~/components/dashboard/response-filters";
 import { formatAnswerValue } from "~/lib/format-answer";
 
 const PAGE_SIZE = 15;
@@ -226,14 +233,41 @@ export function FormResponses({ formId }: { formId: string }) {
   const [page, setPage] = useState(1);
   const [overviewOpen, setOverviewOpen] = useState(true);
   const [selectedResponseId, setSelectedResponseId] = useState<string | null>(null);
+  const [filters, setFilters] = useState<ResponseFiltersState>(emptyResponseFilters);
+
+  const debouncedSearch = useDebouncedValue(filters.search, 350);
+  const debouncedFieldValue = useDebouncedValue(filters.fieldValue, 350);
+
+  const queryFilters = useMemo(
+    () => ({
+      sort: filters.sort,
+      search: debouncedSearch,
+      submittedFrom: filters.submittedFrom,
+      submittedTo: filters.submittedTo,
+      fieldId: filters.fieldId,
+      fieldValue: debouncedFieldValue,
+    }),
+    [
+      filters.sort,
+      filters.submittedFrom,
+      filters.submittedTo,
+      filters.fieldId,
+      debouncedSearch,
+      debouncedFieldValue,
+    ],
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [queryFilters]);
 
   const { data: formData, isLoading: formLoading } = useFormById(formId);
   const { data: analytics, isLoading: analyticsLoading } = useFormAnalytics(formId);
-  const { data: listData, isLoading: listLoading } = useResponsesByForm(
-    formId,
-    page,
-    PAGE_SIZE,
-  );
+  const {
+    data: listData,
+    isLoading: listLoading,
+    isFetching: listFetching,
+  } = useResponsesByForm(formId, page, PAGE_SIZE, queryFilters);
   const { exportCsv, isExporting } = useExportResponsesByForm();
 
   if (formLoading || !formData) {
@@ -249,6 +283,9 @@ export function FormResponses({ formId }: { formId: string }) {
     (a, b) => Number(a.index) - Number(b.index),
   );
   const totalPages = listData?.totalPages ?? 0;
+  const filtersActive = hasActiveResponseFilters(filters);
+  const hasAnyResponses = (analytics?.totalResponses ?? 0) > 0;
+  const isInitialListLoading = listLoading && !listData;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -380,18 +417,42 @@ export function FormResponses({ formId }: { formId: string }) {
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">All responses</h2>
-        {listLoading ? (
+
+        {hasAnyResponses ? (
+          <ResponseFilters
+            fields={previewFields}
+            filters={filters}
+            isFetching={listFetching && !isInitialListLoading}
+            onChange={setFilters}
+          />
+        ) : null}
+
+        {isInitialListLoading ? (
           <Skeleton className="h-64 rounded-xl" />
         ) : !listData?.items.length ? (
           <Empty className="rounded-xl border border-dashed border-border py-16">
             <div className="mx-auto max-w-sm text-center">
-              <p className="text-lg font-semibold">No responses yet</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Share your form link to start collecting answers.
+              <p className="text-lg font-semibold">
+                {filtersActive ? "No matching responses" : "No responses yet"}
               </p>
-              <Button asChild className="mt-4" variant="outline">
-                <Link href={`/dashboard/forms/${formId}`}>Back to form</Link>
-              </Button>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {filtersActive
+                  ? "Try clearing filters or broadening your search."
+                  : "Share your form link to start collecting answers."}
+              </p>
+              {filtersActive ? (
+                <Button
+                  className="mt-4"
+                  variant="outline"
+                  onClick={() => setFilters(emptyResponseFilters)}
+                >
+                  Clear filters
+                </Button>
+              ) : (
+                <Button asChild className="mt-4" variant="outline">
+                  <Link href={`/dashboard/forms/${formId}`}>Back to form</Link>
+                </Button>
+              )}
             </div>
           </Empty>
         ) : (
@@ -435,10 +496,11 @@ export function FormResponses({ formId }: { formId: string }) {
               </Table>
             </div>
 
-            {totalPages > 1 ? (
+            {totalPages > 1 || listData.total > 0 ? (
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  Page {listData.page} of {totalPages} ({listData.total} responses)
+                  Page {listData.page} of {Math.max(totalPages, 1)} ({listData.total} matching
+                  response{listData.total === 1 ? "" : "s"})
                 </p>
                 <div className="flex gap-2">
                   <Button

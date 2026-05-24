@@ -1,4 +1,4 @@
-import { and, asc, count, db, desc, eq, inArray } from "@repo/database";
+import { and, asc, count, db, desc, eq, exists, gte, ilike, inArray, lte, sql } from "@repo/database";
 import { formFieldsTable } from "@repo/database/models/formField";
 import {
   formResponseAnswersTable,
@@ -192,27 +192,124 @@ function buildFieldAnalytics(field: FormFieldRecord, values: unknown[]): FieldAn
   };
 }
 
+function endOfDay(date: Date) {
+  const end = new Date(date);
+  end.setHours(23, 59, 59, 999);
+  return end;
+}
+
+function answerTextMatches(column: typeof formResponseAnswersTable.value, pattern: string) {
+  return ilike(sql`cast(${column} as text)`, `%${pattern}%`);
+}
+
+async function assertFieldBelongsToForm(formId: string, fieldId: string) {
+  const rows = await db
+    .select({ id: formFieldsTable.id })
+    .from(formFieldsTable)
+    .where(and(eq(formFieldsTable.id, fieldId), eq(formFieldsTable.formId, formId)))
+    .limit(1);
+
+  if (!rows[0]) {
+    throw new AppServiceError("Field not found on this form", API_ERROR_CODES.FORM_FIELD_NOT_FOUND);
+  }
+}
+
+function buildResponseListConditions(
+  formId: string,
+  filters: {
+    search?: string;
+    submittedFrom?: Date;
+    submittedTo?: Date;
+    fieldId?: string;
+    fieldValue?: string;
+  },
+) {
+  const conditions = [eq(formResponsesTable.formId, formId)];
+
+  if (filters.submittedFrom) {
+    conditions.push(gte(formResponsesTable.submittedAt, filters.submittedFrom));
+  }
+
+  if (filters.submittedTo) {
+    conditions.push(lte(formResponsesTable.submittedAt, endOfDay(filters.submittedTo)));
+  }
+
+  if (filters.search) {
+    conditions.push(
+      exists(
+        db
+          .select({ id: formResponseAnswersTable.id })
+          .from(formResponseAnswersTable)
+          .where(
+            and(
+              eq(formResponseAnswersTable.responseId, formResponsesTable.id),
+              answerTextMatches(formResponseAnswersTable.value, filters.search),
+            ),
+          ),
+      ),
+    );
+  }
+
+  if (filters.fieldId && filters.fieldValue) {
+    conditions.push(
+      exists(
+        db
+          .select({ id: formResponseAnswersTable.id })
+          .from(formResponseAnswersTable)
+          .where(
+            and(
+              eq(formResponseAnswersTable.responseId, formResponsesTable.id),
+              eq(formResponseAnswersTable.fieldId, filters.fieldId),
+              answerTextMatches(formResponseAnswersTable.value, filters.fieldValue),
+            ),
+          ),
+      ),
+    );
+  }
+
+  return and(...conditions);
+}
+
 export async function listResponsesByForm(
   userId: string,
   payload: unknown,
 ): Promise<ListResponsesByFormOutput> {
-  const { formId, page, pageSize } = await listResponsesByFormInputModel.parseAsync(payload);
+  const parsed = await listResponsesByFormInputModel.parseAsync(payload);
+  const { formId, page, pageSize, sort, search, submittedFrom, submittedTo, fieldId, fieldValue } =
+    parsed;
+
   await getOwnedFormOrThrow(userId, formId);
+
+  if (fieldId) {
+    await assertFieldBelongsToForm(formId, fieldId);
+  }
+
+  const whereClause = buildResponseListConditions(formId, {
+    search,
+    submittedFrom,
+    submittedTo,
+    fieldId,
+    fieldValue,
+  });
 
   const [totalRow] = await db
     .select({ total: count() })
     .from(formResponsesTable)
-    .where(eq(formResponsesTable.formId, formId));
+    .where(whereClause);
 
   const total = Number(totalRow?.total ?? 0);
   const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize);
   const offset = (page - 1) * pageSize;
+  const orderBy =
+    sort === "oldest"
+      ? asc(formResponsesTable.submittedAt)
+      : desc(formResponsesTable.submittedAt);
 
   const responseRows = await db
     .select()
     .from(formResponsesTable)
-    .where(eq(formResponsesTable.formId, formId))
-    .orderBy(desc(formResponsesTable.submittedAt))
+    .where(whereClause)
+    .orderBy(orderBy)
     .limit(pageSize)
     .offset(offset);
 
