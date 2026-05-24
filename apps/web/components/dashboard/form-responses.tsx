@@ -34,7 +34,6 @@ import {
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
 import { Empty } from "~/components/ui/empty";
-import { Progress } from "~/components/ui/progress";
 import { Separator } from "~/components/ui/separator";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Spinner } from "~/components/ui/spinner";
@@ -52,8 +51,8 @@ import {
   useFormAnalytics,
   useResponseById,
   useResponsesByForm,
-  type FieldAnalytics,
 } from "~/hooks/api/response";
+import { FieldAnalyticsCard } from "~/components/dashboard/field-analytics-card";
 import { useDebouncedValue } from "~/hooks/use-debounced-value";
 import {
   ResponseFilters,
@@ -64,121 +63,6 @@ import {
 import { formatAnswerValue } from "~/lib/format-answer";
 
 const PAGE_SIZE = 15;
-
-function FieldAnalyticsCard({ field }: { field: FieldAnalytics }) {
-  if (field.kind === "choice") {
-    const entries = Object.entries(field.counts).sort((a, b) => b[1] - a[1]);
-    const max = entries[0]?.[1] ?? 1;
-
-    return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">{field.label}</CardTitle>
-          <CardDescription>
-            {field.totalAnswers} answer{field.totalAnswers === 1 ? "" : "s"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {entries.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No answers yet</p>
-          ) : (
-            entries.map(([choice, count]) => (
-              <div key={choice} className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="truncate font-medium">{choice}</span>
-                  <span className="text-muted-foreground">{count}</span>
-                </div>
-                <Progress value={(count / max) * 100} className="h-2" />
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (field.kind === "number") {
-    return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">{field.label}</CardTitle>
-          <CardDescription>Numeric field</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-3 gap-3 text-center text-sm">
-          <div>
-            <p className="text-muted-foreground">Min</p>
-            <p className="text-lg font-semibold">{field.min ?? "—"}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Avg</p>
-            <p className="text-lg font-semibold">
-              {field.average !== null ? field.average.toFixed(1) : "—"}
-            </p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Max</p>
-            <p className="text-lg font-semibold">{field.max ?? "—"}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (field.kind === "boolean") {
-    const total = field.trueCount + field.falseCount || 1;
-    return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">{field.label}</CardTitle>
-          <CardDescription>Yes / No</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span>Yes</span>
-              <span>{field.trueCount}</span>
-            </div>
-            <Progress value={(field.trueCount / total) * 100} className="h-2" />
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span>No</span>
-              <span>{field.falseCount}</span>
-            </div>
-            <Progress value={(field.falseCount / total) * 100} className="h-2" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">{field.label}</CardTitle>
-        <CardDescription>
-          {field.totalAnswers} text answer{field.totalAnswers === 1 ? "" : "s"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {field.recentSamples.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No answers yet</p>
-        ) : (
-          <ul className="space-y-2 text-sm">
-            {field.recentSamples.map((sample, index) => (
-              <li
-                key={`${field.fieldId}-${index}`}
-                className="rounded-md border border-border bg-muted/30 px-3 py-2"
-              >
-                {formatAnswerValue(sample)}
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
 
 function ResponseDetailDialog({
   formId,
