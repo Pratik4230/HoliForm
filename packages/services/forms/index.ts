@@ -12,6 +12,7 @@ import type {
   GetPublicFormOutput,
   ListPublicFormsInput,
   ListPublicFormsOutput,
+  ListFormThemesOutput,
   SubmitFormResponseInput,
   SubmitFormResponseOutput,
   PublishFormInput,
@@ -27,6 +28,7 @@ import type {
 import * as formDomain from "./form";
 import * as formFieldDomain from "./formField";
 import * as publicDomain from "./public";
+import * as themesDomain from "./themes";
 
 export { buildSubmissionSchemaFromFields } from "./buildSubmissionSchema";
 
@@ -93,6 +95,10 @@ class FormService {
   ) {
     return publicDomain.submitFormResponse(payload, options);
   }
+
+  listFormThemes() {
+    return themesDomain.listFormThemes();
+  }
 }
 
 export default FormService;
@@ -111,6 +117,7 @@ export type {
   GetPublicFormOutput,
   ListPublicFormsInput,
   ListPublicFormsOutput,
+  ListFormThemesOutput,
   SubmitFormResponseInput,
   SubmitFormResponseOutput,
   PublishFormInput,

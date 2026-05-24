@@ -1,11 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  type PublicFormOutput,
-  usePublicForm,
-  useSubmitFormResponse,
-} from "~/hooks/api/form";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, type CSSProperties } from "react";
+import { type PublicFormOutput, usePublicForm, useSubmitFormResponse } from "~/hooks/api/form";
+import { themeToCssVariables } from "~/lib/form-theme-styles";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -196,15 +194,18 @@ function isStepValid(field: FormField, value: unknown) {
 }
 
 export function PublicFormFill({ username, slug }: PublicFormFillProps) {
+  const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [honeypot, setHoneypot] = useState("");
-  const [thankYouMessage, setThankYouMessage] = useState<string | null>(null);
 
   const query = usePublicForm(username, slug);
   const submitMutation = useSubmitFormResponse({
     onSuccess: (data) => {
-      setThankYouMessage(data.thankYouMessage);
+      const params = new URLSearchParams({
+        message: data.thankYouMessage,
+      });
+      router.push(`/f/${username}/${slug}/thank-you?${params.toString()}`);
     },
   });
 
@@ -238,17 +239,6 @@ export function PublicFormFill({ username, slug }: PublicFormFillProps) {
               ? getPublicFormErrorMessage(query.error)
               : "This form does not exist, is not published, or cannot be opened."}
           </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
-  if (thankYouMessage) {
-    return (
-      <Card className="mx-auto mt-16 max-w-lg border-0 text-center shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-2xl">Submitted</CardTitle>
-          <CardDescription className="text-base">{thankYouMessage}</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -296,16 +286,39 @@ export function PublicFormFill({ username, slug }: PublicFormFillProps) {
     });
   };
 
+  const theme = query.data?.theme;
+  const themeStyle = theme ? themeToCssVariables(theme) : undefined;
+
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-4 py-12">
-      <div className="mb-8 space-y-2">
-        <p className="text-muted-foreground text-sm font-medium">
+    <div
+      className="mx-auto flex min-h-svh max-w-2xl flex-col justify-center px-4 py-8 sm:px-6 sm:py-12"
+      style={themeStyle}
+    >
+      <div className="mb-6 space-y-2 sm:mb-8">
+        <p className="text-sm font-medium opacity-80">
           {stepIndex + 1} of {fields.length}
         </p>
-        <Progress value={progress} className="h-2" />
+        <Progress
+          value={progress}
+          className="h-2"
+          style={
+            theme ? ({ ["--primary" as string]: theme.primaryColor } as CSSProperties) : undefined
+          }
+        />
       </div>
 
-      <Card className="relative border-0 shadow-xl">
+      <Card
+        className="relative border-0 shadow-xl"
+        style={
+          theme
+            ? {
+                backgroundColor: theme.backgroundColor,
+                color: theme.textColor,
+                borderColor: `${theme.primaryColor}33`,
+              }
+            : undefined
+        }
+      >
         <CardHeader>
           <CardTitle className="text-2xl">{form.title}</CardTitle>
           {stepIndex === 0 && form.description ? (
@@ -359,6 +372,8 @@ export function PublicFormFill({ username, slug }: PublicFormFillProps) {
             </Button>
             <Button
               type="button"
+              className="min-h-11 min-w-24 sm:min-h-10"
+              style={theme ? { backgroundColor: theme.primaryColor, color: "#fff" } : undefined}
               disabled={!canAdvance || submitMutation.isPending}
               onClick={() => void handleNext()}
             >

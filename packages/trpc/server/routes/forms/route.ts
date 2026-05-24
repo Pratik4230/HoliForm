@@ -21,6 +21,8 @@ import {
   submitFormResponseOutputModel,
   listFormsInputModel,
   listFormsOutputModel,
+  listFormThemesInputModel,
+  listFormThemesOutputModel,
   publishFormInputModel,
   reorderFormFieldInputModel,
   setFormAcceptingResponsesInputModel,
@@ -52,6 +54,14 @@ export const formsRouter = router({
     .output(listFormsOutputModel)
     .query(async ({ ctx }) => {
       return await formService.listForms(ctx.user.id);
+    }),
+
+  listFormThemes: publicProcedure
+    .meta(publicOpenApiMeta("GET", getPath("/listFormThemes"), TAGS))
+    .input(listFormThemesInputModel)
+    .output(listFormThemesOutputModel)
+    .query(async () => {
+      return await formService.listFormThemes();
     }),
 
   getFormById: protectedProcedure

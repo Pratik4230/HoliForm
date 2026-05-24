@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { usernameModel } from "../user";
 import { formFieldOutputModel } from "./formField";
+import { formThemeConfigModel } from "./theme";
 
 export const getPublicFormInputModel = z.object({
   username: usernameModel.describe("Creator username"),
@@ -27,6 +28,7 @@ export type PublicFormRecord = z.infer<typeof publicFormOutputModel>;
 export const getPublicFormOutputModel = z.object({
   form: publicFormOutputModel.describe("Published form"),
   fields: z.array(formFieldOutputModel).describe("Fields sorted by index"),
+  theme: formThemeConfigModel.describe("Resolved theme for public fill UI"),
 });
 
 export type GetPublicFormOutput = z.infer<typeof getPublicFormOutputModel>;

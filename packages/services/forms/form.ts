@@ -27,6 +27,13 @@ import { AppServiceError } from "../errors";
 import { mapFormFieldRecord, mapFormRecord } from "./mappers";
 import { getOwnedFormOrThrow } from "./ownership";
 import { ensureUniqueSlug, slugExistsForUser, slugify } from "./slug";
+import { DEFAULT_FORM_THEME_ID, isValidThemeId } from "./themePresets";
+
+function assertValidThemeId(themeId: string) {
+  if (!isValidThemeId(themeId)) {
+    throw new AppServiceError("Unknown theme preset", API_ERROR_CODES.VALIDATION_ERROR);
+  }
+}
 
 export async function createForm(userId: string, payload: CreateFormInput): Promise<FormRecord> {
   const { title, description, slug: slugInput, themeId } =
@@ -44,6 +51,8 @@ export async function createForm(userId: string, payload: CreateFormInput): Prom
   }
 
   const slug = slugInput ? baseSlug : await ensureUniqueSlug(userId, baseSlug);
+  const resolvedThemeId = themeId ?? DEFAULT_FORM_THEME_ID;
+  assertValidThemeId(resolvedThemeId);
 
   const inserted = await db
     .insert(formsTable)
@@ -52,7 +61,7 @@ export async function createForm(userId: string, payload: CreateFormInput): Prom
       title,
       description,
       slug,
-      themeId: themeId ?? null,
+      themeId: resolvedThemeId,
     })
     .returning();
 
@@ -134,6 +143,9 @@ export async function updateForm(userId: string, payload: UpdateFormInput): Prom
     updates.thankYouMessage = thankYouMessage;
   }
   if (themeId !== undefined) {
+    if (themeId !== null) {
+      assertValidThemeId(themeId);
+    }
     updates.themeId = themeId;
   }
   if (slugInput !== undefined) {

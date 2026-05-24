@@ -74,8 +74,22 @@ import {
   useUpdateForm,
   useUpsertFormField,
 } from "~/hooks/api/form";
+import { FormThemePicker } from "~/components/forms/form-theme-picker";
 
 const FIELD_TYPES = formFieldTypeModel.options;
+
+const FIELD_TYPE_LABELS: Record<(typeof FIELD_TYPES)[number], string> = {
+  text: "Short text",
+  textarea: "Long text",
+  email: "Email",
+  number: "Number",
+  phone: "Phone",
+  date: "Date",
+  checkbox: "Checkbox",
+  radio: "Multiple choice",
+  select: "Dropdown",
+  multiselect: "Multi-select",
+};
 
 function slugifyLabel(label: string) {
   return label
@@ -120,6 +134,7 @@ function FieldEditorDialog({
           isRequired: false,
           description: undefined,
           placeholder: undefined,
+          options: undefined,
         },
   });
 
@@ -219,7 +234,15 @@ function FieldEditorDialog({
               render={({ field: f }) => (
                 <FormItem>
                   <FormLabel>Type</FormLabel>
-                  <Select value={f.value} onValueChange={f.onChange}>
+                  <Select
+                    value={f.value}
+                    onValueChange={(value) => {
+                      f.onChange(value);
+                      if (!["select", "radio", "multiselect", "checkbox"].includes(value)) {
+                        setChoicesText("");
+                      }
+                    }}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />
@@ -228,7 +251,7 @@ function FieldEditorDialog({
                     <SelectContent>
                       {FIELD_TYPES.map((type) => (
                         <SelectItem key={type} value={type}>
-                          {type}
+                          {FIELD_TYPE_LABELS[type]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -237,14 +260,43 @@ function FieldEditorDialog({
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field: f }) => (
+                <FormItem>
+                  <FormLabel>Help text (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea rows={2} {...f} value={f.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="placeholder"
+              render={({ field: f }) => (
+                <FormItem>
+                  <FormLabel>Placeholder (optional)</FormLabel>
+                  <FormControl>
+                    <Input {...f} value={f.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             {needsChoices ? (
               <div className="space-y-2">
                 <Label>Choices (one per line)</Label>
+                <p className="text-muted-foreground text-xs">
+                  Required for dropdown, multi-select, and multi-option checkbox fields.
+                </p>
                 <Textarea
                   value={choicesText}
                   onChange={(e) => setChoicesText(e.target.value)}
                   rows={4}
-                  placeholder="Option A&#10;Option B"
+                  placeholder={"Option A\nOption B\nOption C"}
                 />
               </div>
             ) : null}
@@ -284,6 +336,7 @@ export function FormEditor({ formId }: { formId: string }) {
       description: "",
       slug: "",
       thankYouMessage: "",
+      themeId: null,
     },
   });
 
@@ -297,6 +350,7 @@ export function FormEditor({ formId }: { formId: string }) {
       description: data.form.description,
       slug: data.form.slug,
       thankYouMessage: data.form.thankYouMessage ?? "",
+      themeId: data.form.themeId,
     });
   }, [data, formId, settingsForm]);
 
@@ -425,7 +479,8 @@ export function FormEditor({ formId }: { formId: string }) {
                       <div className="min-w-0 flex-1">
                         <p className="font-medium">{field.label}</p>
                         <p className="text-muted-foreground text-xs">
-                          {field.type} · <span className="font-mono">{field.labelKey}</span>
+                          {FIELD_TYPE_LABELS[field.type]} ·{" "}
+                          <span className="font-mono">{field.labelKey}</span>
                           {field.isRequired ? " · required" : ""}
                         </p>
                       </div>
@@ -544,6 +599,24 @@ export function FormEditor({ formId }: { formId: string }) {
                   </Button>
                 </form>
               </Form>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div>
+                  <p className="font-medium">Form theme</p>
+                  <p className="text-muted-foreground text-sm">
+                    Choose how your public form looks to respondents.
+                  </p>
+                </div>
+                <FormThemePicker
+                  value={form.themeId}
+                  disabled={updateForm.isPending}
+                  onChange={(themeId) => {
+                    updateForm.mutate({ formId, themeId });
+                  }}
+                />
+              </div>
 
               <Separator />
 

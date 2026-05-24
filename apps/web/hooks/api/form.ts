@@ -47,6 +47,10 @@ export function useListPublicForms(limit = 24) {
   return trpc.forms.listPublic.useQuery({ limit });
 }
 
+export function useListFormThemes() {
+  return trpc.forms.listFormThemes.useQuery();
+}
+
 // ——— Creator mutations ———
 
 export function useCreateForm(options?: {

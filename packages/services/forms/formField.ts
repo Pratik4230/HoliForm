@@ -71,6 +71,19 @@ export async function upsertFormField(
 
   await getOwnedFormOrThrow(userId, formId);
 
+  const requiresChoices =
+    type === "select" ||
+    type === "radio" ||
+    type === "multiselect" ||
+    (type === "checkbox" && options?.choices !== undefined);
+
+  if (requiresChoices && (options?.choices?.length ?? 0) === 0) {
+    throw new AppServiceError(
+      "Add at least one choice for this field type",
+      API_ERROR_CODES.VALIDATION_ERROR,
+    );
+  }
+
   if (await labelKeyExistsOnForm(formId, labelKey, fieldId)) {
     throw new AppServiceError(
       "A field with this label key already exists on this form",

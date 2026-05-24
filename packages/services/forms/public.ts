@@ -29,6 +29,7 @@ import { inngest, INNGEST_EVENTS } from "@repo/inngest";
 import { AppServiceError } from "../errors";
 import { buildSubmissionSchemaFromFields } from "./buildSubmissionSchema";
 import { mapFormFieldRecord } from "./mappers";
+import { resolveFormTheme } from "./themePresets";
 
 function mapPublicFormRecord(
   row: typeof formsTable.$inferSelect,
@@ -105,6 +106,7 @@ export async function getPublicForm(payload: GetPublicFormInput): Promise<GetPub
   return {
     form: mapPublicFormRecord(form, creatorUsername),
     fields,
+    theme: resolveFormTheme(form.themeId),
   };
 }
 
