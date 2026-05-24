@@ -23,7 +23,7 @@ export function SiteHeader() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <FileText className="size-5 text-foreground" />
-          <span className="text-base font-semibold text-foreground">GulalForms</span>
+          <span className="text-base font-semibold text-foreground">HoliForm</span>
         </Link>
 
         {/* Nav */}

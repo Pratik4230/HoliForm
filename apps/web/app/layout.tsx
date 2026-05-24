@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "GulalForms — Form builder",
+  title: "HoliForm — Form builder",
   description: "Build beautiful Typeform-style surveys and share them instantly.",
 };
 

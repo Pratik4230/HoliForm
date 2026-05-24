@@ -49,7 +49,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <SidebarHeader className="gap-3 p-4">
           <Link href="/dashboard" className="flex items-center gap-2">
             <FileText className="size-5 text-foreground" />
-            <span className="text-base font-semibold text-foreground">GulalForms</span>
+            <span className="text-base font-semibold text-foreground">HoliForm</span>
           </Link>
         </SidebarHeader>
 
