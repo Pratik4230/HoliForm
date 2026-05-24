@@ -90,6 +90,12 @@ export const deleteFormOutputModel = z.object({
 
 export type DeleteFormOutput = z.infer<typeof deleteFormOutputModel>;
 
+export const cloneFormInputModel = z.object({
+  formId: z.uuid().describe("Form id to clone"),
+});
+
+export type CloneFormInput = z.infer<typeof cloneFormInputModel>;
+
 export const publishFormInputModel = z.object({
   formId: z.uuid().describe("Form id"),
 });

@@ -1,4 +1,5 @@
 import type {
+  CloneFormInput,
   CreateFormInput,
   DeleteFormFieldInput,
   DeleteFormFieldOutput,
@@ -53,6 +54,10 @@ class FormService {
     return formDomain.deleteForm(userId, payload);
   }
 
+  cloneForm(userId: string, payload: CloneFormInput) {
+    return formDomain.cloneForm(userId, payload);
+  }
+
   publishForm(userId: string, payload: PublishFormInput) {
     return formDomain.publishForm(userId, payload);
   }
@@ -104,6 +109,7 @@ class FormService {
 export default FormService;
 
 export type {
+  CloneFormInput,
   CreateFormInput,
   DeleteFormFieldInput,
   DeleteFormFieldOutput,

@@ -9,6 +9,7 @@ import {
   ArrowUp,
   BarChart3,
   Copy,
+  CopyPlus,
   ExternalLink,
   Eye,
   Plus,
@@ -65,6 +66,7 @@ import { getPublicFormUrl } from "~/lib/form-url";
 import { useSession } from "~/hooks/api/auth";
 import {
   type EditorField,
+  useCloneForm,
   useDeleteFormField,
   useFormById,
   usePublishForm,
@@ -362,6 +364,7 @@ export function FormEditor({ formId }: { formId: string }) {
   const setAccepting = useSetFormAcceptingResponses(formId);
   const deleteField = useDeleteFormField(formId);
   const reorder = useReorderFormField(formId);
+  const cloneForm = useCloneForm();
 
   if (isLoading || !data) {
     return (
@@ -426,6 +429,15 @@ export function FormEditor({ formId }: { formId: string }) {
               <Eye className="size-4" />
               Preview
             </Link>
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-full"
+            disabled={cloneForm.isPending}
+            onClick={() => cloneForm.mutate({ formId })}
+          >
+            <CopyPlus className="size-4" />
+            Clone
           </Button>
           {shareUrl ? (
             <>

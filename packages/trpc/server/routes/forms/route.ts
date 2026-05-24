@@ -4,6 +4,7 @@ import { mapServiceError } from "../../utils/map-service-error";
 import { protectedOpenApiMeta, publicOpenApiMeta } from "../../utils/openapi-meta";
 import { generatePath } from "../../utils/path-generator";
 import {
+  cloneFormInputModel,
   createFormInputModel,
   deleteFormFieldInputModel,
   deleteFormFieldOutputModel,
@@ -95,6 +96,18 @@ export const formsRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.deleteForm(ctx.user.id, input);
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+
+  cloneForm: protectedProcedure
+    .meta(protectedOpenApiMeta("POST", getPath("/cloneForm"), TAGS))
+    .input(cloneFormInputModel)
+    .output(formRecordOutputModel)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await formService.cloneForm(ctx.user.id, input);
       } catch (error) {
         mapServiceError(error);
       }

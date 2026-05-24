@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { Copy, ExternalLink, EyeOff, Globe, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Copy, ExternalLink, EyeOff, Globe, MoreHorizontal, Pencil, Trash2, CopyPlus } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "~/components/ui/badge";
@@ -18,7 +18,7 @@ import { Empty } from "~/components/ui/empty";
 import { Skeleton } from "~/components/ui/skeleton";
 import { getPublicFormUrl } from "~/lib/form-url";
 import { useSession } from "~/hooks/api/auth";
-import { useDeleteForm, useListForms } from "~/hooks/api/form";
+import { useCloneForm, useDeleteForm, useListForms } from "~/hooks/api/form";
 
 function statusBadge(status: "draft" | "published", visibility: "public" | "unlisted") {
   if (status === "draft") {
@@ -53,6 +53,7 @@ export function FormsList() {
   const session = useSession();
   const { data: forms, isLoading } = useListForms();
   const deleteForm = useDeleteForm();
+  const cloneForm = useCloneForm();
 
   const copyLink = (username: string, slug: string) => {
     const url = getPublicFormUrl(username, slug);
@@ -170,6 +171,13 @@ export function FormsList() {
                       </a>
                     </DropdownMenuItem>
                   ) : null}
+                  <DropdownMenuItem
+                    disabled={cloneForm.isPending}
+                    onClick={() => cloneForm.mutate({ formId: form.id })}
+                  >
+                    <CopyPlus className="size-4" />
+                    Clone
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"

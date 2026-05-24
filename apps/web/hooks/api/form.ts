@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { RouterOutputs } from "@repo/trpc/client";
 import { API_ERROR_CODES } from "@repo/validators/api-errors";
@@ -94,6 +95,23 @@ export function useDeleteForm() {
     },
     onError: (error) => {
       toast.error(error.message || "Failed to delete form");
+    },
+  });
+}
+
+export function useCloneForm(options?: { onSuccess?: (cloned: FormRecord) => void }) {
+  const utils = useFormsUtils();
+  const router = useRouter();
+
+  return trpc.forms.cloneForm.useMutation({
+    onSuccess: async (cloned) => {
+      await utils.forms.listForms.invalidate();
+      toast.success("Form cloned");
+      await options?.onSuccess?.(cloned);
+      router.push(`/dashboard/forms/${cloned.id}`);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to clone form");
     },
   });
 }

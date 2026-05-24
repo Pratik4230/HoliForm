@@ -3,6 +3,7 @@ import { formsTable } from "@repo/database/models/form";
 import { formFieldsTable } from "@repo/database/models/formField";
 import {
   createFormInputModel,
+  cloneFormInputModel,
   deleteFormInputModel,
   publishFormInputModel,
   setFormAcceptingResponsesInputModel,
@@ -10,6 +11,7 @@ import {
   unpublishFormInputModel,
   updateFormInputModel,
   type CreateFormInput,
+  type CloneFormInput,
   type DeleteFormInput,
   type DeleteFormOutput,
   type FormRecord,
@@ -185,6 +187,67 @@ export async function deleteForm(
     .where(and(eq(formsTable.id, formId), eq(formsTable.userId, userId)));
 
   return { success: true };
+}
+
+function buildCloneTitle(title: string) {
+  const copyTitle = `Copy of ${title}`;
+  return copyTitle.length <= 255 ? copyTitle : `${copyTitle.slice(0, 252)}...`;
+}
+
+export async function cloneForm(userId: string, payload: CloneFormInput): Promise<FormRecord> {
+  const { formId } = await cloneFormInputModel.parseAsync(payload);
+  const source = await getOwnedFormOrThrow(userId, formId);
+
+  const fieldRows = await db
+    .select()
+    .from(formFieldsTable)
+    .where(eq(formFieldsTable.formId, formId))
+    .orderBy(asc(formFieldsTable.index));
+
+  const slug = await ensureUniqueSlug(userId, slugify(`${source.slug}-copy`));
+  const title = buildCloneTitle(source.title);
+
+  if (source.themeId) {
+    assertValidThemeId(source.themeId);
+  }
+
+  return db.transaction(async (tx) => {
+    const inserted = await tx
+      .insert(formsTable)
+      .values({
+        userId,
+        title,
+        description: source.description,
+        slug,
+        themeId: source.themeId,
+        thankYouMessage: source.thankYouMessage,
+      })
+      .returning();
+
+    const form = inserted[0];
+    if (!form) {
+      throw new AppServiceError("Failed to clone form", API_ERROR_CODES.INTERNAL_ERROR);
+    }
+
+    if (fieldRows.length > 0) {
+      await tx.insert(formFieldsTable).values(
+        fieldRows.map((field) => ({
+          formId: form.id,
+          label: field.label,
+          labelKey: field.labelKey,
+          description: field.description,
+          placeholder: field.placeholder,
+          isRequired: field.isRequired,
+          index: field.index,
+          type: field.type,
+          options: field.options,
+          validationRules: field.validationRules,
+        })),
+      );
+    }
+
+    return mapFormRecord(form);
+  });
 }
 
 export async function publishForm(userId: string, payload: PublishFormInput): Promise<FormRecord> {
