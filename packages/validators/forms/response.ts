@@ -132,3 +132,36 @@ export const getFormAnalyticsOutputModel = z.object({
 });
 
 export type GetFormAnalyticsOutput = z.infer<typeof getFormAnalyticsOutputModel>;
+
+export const exportResponsesByFormInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+});
+
+export type ExportResponsesByFormInput = z.infer<typeof exportResponsesByFormInputModel>;
+
+export const exportResponseColumnModel = z.object({
+  fieldId: z.uuid().describe("Field id"),
+  labelKey: z.string().describe("Answer key"),
+  label: z.string().describe("Column header label"),
+});
+
+export type ExportResponseColumn = z.infer<typeof exportResponseColumnModel>;
+
+export const exportResponseRowModel = z.object({
+  id: z.uuid().describe("Response id"),
+  submittedAt: z.coerce.date().describe("Submitted at"),
+  respondentIp: z.string().nullable().describe("Respondent IP if captured"),
+  answers: z.record(z.string(), z.unknown()).describe("labelKey to answer value"),
+});
+
+export type ExportResponseRow = z.infer<typeof exportResponseRowModel>;
+
+export const exportResponsesByFormOutputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+  formTitle: z.string().describe("Form title"),
+  formSlug: z.string().describe("Form slug"),
+  columns: z.array(exportResponseColumnModel).describe("Field columns in display order"),
+  rows: z.array(exportResponseRowModel).describe("All responses"),
+});
+
+export type ExportResponsesByFormOutput = z.infer<typeof exportResponsesByFormOutputModel>;

@@ -1,4 +1,6 @@
 import type {
+  ExportResponsesByFormInput,
+  ExportResponsesByFormOutput,
   GetFormAnalyticsInput,
   GetFormAnalyticsOutput,
   GetResponseByIdInput,
@@ -21,11 +23,17 @@ class ResponseService {
   getFormAnalytics(userId: string, payload: GetFormAnalyticsInput) {
     return responseDomain.getFormAnalytics(userId, payload);
   }
+
+  exportByForm(userId: string, payload: ExportResponsesByFormInput) {
+    return responseDomain.exportResponsesByForm(userId, payload);
+  }
 }
 
 export default ResponseService;
 
 export type {
+  ExportResponsesByFormInput,
+  ExportResponsesByFormOutput,
   GetFormAnalyticsInput,
   GetFormAnalyticsOutput,
   GetResponseByIdInput,

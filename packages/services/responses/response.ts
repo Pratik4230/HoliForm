@@ -6,9 +6,11 @@ import {
 } from "@repo/database/models/formResponse";
 import type { FormFieldRecord } from "@repo/validators/forms";
 import {
+  exportResponsesByFormInputModel,
   getFormAnalyticsInputModel,
   getResponseByIdInputModel,
   listResponsesByFormInputModel,
+  type ExportResponsesByFormOutput,
   type FieldAnalytics,
   type GetFormAnalyticsOutput,
   type GetResponseByIdOutput,
@@ -348,5 +350,57 @@ export async function getFormAnalytics(
     lastResponseAt: lastRows[0]?.last ?? null,
     recentResponses,
     fieldBreakdowns,
+  };
+}
+
+export async function exportResponsesByForm(
+  userId: string,
+  payload: unknown,
+): Promise<ExportResponsesByFormOutput> {
+  const { formId } = await exportResponsesByFormInputModel.parseAsync(payload);
+  const form = await getOwnedFormOrThrow(userId, formId);
+
+  const fieldRows = await db
+    .select()
+    .from(formFieldsTable)
+    .where(eq(formFieldsTable.formId, formId))
+    .orderBy(asc(formFieldsTable.index));
+
+  const columns = fieldRows.map((field) => ({
+    fieldId: field.id,
+    labelKey: field.labelKey,
+    label: field.label,
+  }));
+
+  const responseRows = await db
+    .select()
+    .from(formResponsesTable)
+    .where(eq(formResponsesTable.formId, formId))
+    .orderBy(desc(formResponsesTable.submittedAt));
+
+  const answersByResponse = await loadAnswersForResponses(responseRows.map((row) => row.id));
+
+  const rows = responseRows.map((row) => {
+    const answers = answersByResponse.get(row.id) ?? [];
+    const answerMap: Record<string, unknown> = {};
+
+    for (const answer of answers) {
+      answerMap[answer.labelKey] = answer.value;
+    }
+
+    return {
+      id: row.id,
+      submittedAt: row.submittedAt,
+      respondentIp: row.respondentIp ?? null,
+      answers: answerMap,
+    };
+  });
+
+  return {
+    formId,
+    formTitle: form.title,
+    formSlug: form.slug,
+    columns,
+    rows,
   };
 }

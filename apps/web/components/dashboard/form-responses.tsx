@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Download,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -47,6 +48,7 @@ import {
 } from "~/components/ui/table";
 import { useFormById } from "~/hooks/api/form";
 import {
+  useExportResponsesByForm,
   useFormAnalytics,
   useResponseById,
   useResponsesByForm,
@@ -232,6 +234,7 @@ export function FormResponses({ formId }: { formId: string }) {
     page,
     PAGE_SIZE,
   );
+  const { exportCsv, isExporting } = useExportResponsesByForm();
 
   if (formLoading || !formData) {
     return (
@@ -260,9 +263,24 @@ export function FormResponses({ formId }: { formId: string }) {
           <h1 className="text-2xl font-bold tracking-tight">{form.title}</h1>
           <p className="text-muted-foreground text-sm">Responses & analytics</p>
         </div>
-        <Badge variant="secondary" className="text-sm">
-          {analytics?.totalResponses ?? 0} total
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary" className="text-sm">
+            {analytics?.totalResponses ?? 0} total
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isExporting || (analytics?.totalResponses ?? 0) === 0}
+            onClick={() => void exportCsv(formId)}
+          >
+            {isExporting ? (
+              <Spinner className="size-4" />
+            ) : (
+              <Download className="size-4" />
+            )}
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       <Collapsible open={overviewOpen} onOpenChange={setOverviewOpen} className="space-y-3">

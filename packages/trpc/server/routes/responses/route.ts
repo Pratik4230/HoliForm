@@ -4,6 +4,8 @@ import { mapServiceError } from "../../utils/map-service-error";
 import { protectedOpenApiMeta } from "../../utils/openapi-meta";
 import { generatePath } from "../../utils/path-generator";
 import {
+  exportResponsesByFormInputModel,
+  exportResponsesByFormOutputModel,
   getFormAnalyticsInputModel,
   getFormAnalyticsOutputModel,
   getResponseByIdInputModel,
@@ -47,6 +49,18 @@ export const responsesRouter = router({
     .query(async ({ ctx, input }) => {
       try {
         return await responseService.getFormAnalytics(ctx.user.id, input);
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+
+  exportByForm: protectedProcedure
+    .meta(protectedOpenApiMeta("GET", getPath("/exportByForm"), TAGS))
+    .input(exportResponsesByFormInputModel)
+    .output(exportResponsesByFormOutputModel)
+    .query(async ({ ctx, input }) => {
+      try {
+        return await responseService.exportByForm(ctx.user.id, input);
       } catch (error) {
         mapServiceError(error);
       }
