@@ -10,6 +10,7 @@ import {
   BarChart3,
   Copy,
   ExternalLink,
+  Eye,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -420,12 +421,18 @@ export function FormEditor({ formId }: { formId: string }) {
               Publish
             </Button>
           )}
+          <Button variant="outline" className="rounded-full" asChild>
+            <Link href={`/preview/${formId}`}>
+              <Eye className="size-4" />
+              Preview
+            </Link>
+          </Button>
           {shareUrl ? (
             <>
               <Button variant="outline" className="rounded-full" asChild>
                 <a href={shareUrl} target="_blank" rel="noreferrer">
                   <ExternalLink className="size-4" />
-                  Preview
+                  Open live
                 </a>
               </Button>
               <Button
