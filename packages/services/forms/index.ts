@@ -1,4 +1,5 @@
 import type {
+  ArchiveFormInput,
   CloneFormInput,
   CreateFormInput,
   DeleteFormFieldInput,
@@ -21,9 +22,12 @@ import type {
   ReorderFormFieldInput,
   SetFormAcceptingResponsesInput,
   SetFormVisibilityInput,
+  UnarchiveFormInput,
   UnpublishFormInput,
   UpdateFormInput,
   UpsertFormFieldInput,
+  VerifyFormAccessInput,
+  VerifyFormAccessOutput,
 } from "@repo/validators/forms";
 
 import * as formDomain from "./form";
@@ -58,6 +62,14 @@ class FormService {
     return formDomain.cloneForm(userId, payload);
   }
 
+  archiveForm(userId: string, payload: ArchiveFormInput) {
+    return formDomain.archiveForm(userId, payload);
+  }
+
+  unarchiveForm(userId: string, payload: UnarchiveFormInput) {
+    return formDomain.unarchiveForm(userId, payload);
+  }
+
   publishForm(userId: string, payload: PublishFormInput) {
     return formDomain.publishForm(userId, payload);
   }
@@ -88,6 +100,10 @@ class FormService {
 
   getPublicForm(payload: GetPublicFormInput) {
     return publicDomain.getPublicForm(payload);
+  }
+
+  verifyFormAccess(payload: VerifyFormAccessInput) {
+    return publicDomain.verifyFormAccess(payload);
   }
 
   listPublicForms(payload: ListPublicFormsInput) {

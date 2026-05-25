@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import type { FormThemeConfig } from "@repo/validators/forms";
 import type { PublicFormOutput } from "~/hooks/api/form";
+import { buildFormSteps, formHasMultipleSections } from "~/lib/form-fill-pages";
+import { clearFormDraft, loadFormDraft, saveFormDraft } from "~/lib/form-draft-storage";
 import { themeToCssVariables } from "~/lib/form-theme-styles";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
@@ -31,6 +33,7 @@ type FormFillExperienceProps = {
   fields: FormFillField[];
   theme?: FormThemeConfig;
   mode: "live" | "preview";
+  draftKey?: string;
   onSubmit: (answers: Record<string, unknown>, honeypot?: string) => Promise<void>;
   isSubmitting?: boolean;
   submitError?: boolean;
@@ -186,7 +189,7 @@ function FieldInput({
   }
 }
 
-function isStepValid(field: FormFillField, value: unknown) {
+function isFieldValid(field: FormFillField, value: unknown) {
   if (!field.isRequired) {
     return true;
   }
@@ -199,28 +202,122 @@ function isStepValid(field: FormFillField, value: unknown) {
   return true;
 }
 
+function isStepValid(stepFields: FormFillField[], answers: Record<string, unknown>) {
+  return stepFields.every((field) => isFieldValid(field, answers[field.labelKey]));
+}
+
 export function FormFillExperience({
   form,
   fields,
   theme,
   mode,
+  draftKey,
   onSubmit,
   isSubmitting = false,
   submitError = false,
 }: FormFillExperienceProps) {
+  const steps = useMemo(() => buildFormSteps(fields), [fields]);
+  const multiSection = formHasMultipleSections(fields);
+
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [honeypot, setHoneypot] = useState("");
+  const [draftRestored, setDraftRestored] = useState(false);
 
-  const currentField = fields[stepIndex];
-  const progress = fields.length > 0 ? ((stepIndex + 1) / fields.length) * 100 : 100;
+  const currentStep = steps[stepIndex] ?? [];
+  const progress = steps.length > 0 ? ((stepIndex + 1) / steps.length) * 100 : 100;
+  const isLastStep = stepIndex >= steps.length - 1;
 
-  const canAdvance = useMemo(() => {
-    if (!currentField) {
-      return true;
+  const canAdvance = useMemo(
+    () => isStepValid(currentStep, answers),
+    [answers, currentStep],
+  );
+
+  useEffect(() => {
+    if (!draftKey || mode !== "live") {
+      return;
     }
-    return isStepValid(currentField, answers[currentField.labelKey]);
-  }, [answers, currentField]);
+    const draft = loadFormDraft(draftKey);
+    if (!draft) {
+      return;
+    }
+    setAnswers(draft.answers);
+    setStepIndex(Math.min(draft.stepIndex, Math.max(0, steps.length - 1)));
+    setDraftRestored(true);
+  }, [draftKey, mode, steps.length]);
+
+  useEffect(() => {
+    if (!draftKey || mode !== "live") {
+      return;
+    }
+    saveFormDraft(draftKey, {
+      answers,
+      stepIndex,
+      savedAt: Date.now(),
+    });
+  }, [answers, stepIndex, draftKey, mode]);
+
+  const handleNext = useCallback(async () => {
+    if (!canAdvance || currentStep.length === 0) {
+      return;
+    }
+
+    if (!isLastStep) {
+      setStepIndex((index) => index + 1);
+      return;
+    }
+
+    await onSubmit(answers, mode === "live" ? honeypot : undefined);
+    if (draftKey && mode === "live") {
+      clearFormDraft(draftKey);
+    }
+  }, [
+    answers,
+    canAdvance,
+    currentStep.length,
+    draftKey,
+    honeypot,
+    isLastStep,
+    mode,
+    onSubmit,
+  ]);
+
+  const handleBack = useCallback(() => {
+    setStepIndex((index) => Math.max(0, index - 1));
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      const isTextarea = tag === "textarea";
+      const isContentEditable = target?.isContentEditable;
+
+      if (event.key === "Enter" && !event.shiftKey && !isTextarea && !isContentEditable) {
+        event.preventDefault();
+        void handleNext();
+        return;
+      }
+
+      if (event.key === "ArrowLeft" && !isTextarea) {
+        if (stepIndex > 0) {
+          event.preventDefault();
+          handleBack();
+        }
+        return;
+      }
+
+      if (event.key === "ArrowRight" && !isTextarea && !isContentEditable) {
+        if (canAdvance && !isLastStep) {
+          event.preventDefault();
+          setStepIndex((index) => index + 1);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [canAdvance, handleBack, handleNext, isLastStep, stepIndex]);
 
   if (fields.length === 0) {
     return (
@@ -233,22 +330,10 @@ export function FormFillExperience({
     );
   }
 
-  const isLastStep = stepIndex >= fields.length - 1;
-
-  const handleNext = async () => {
-    if (!currentField || !canAdvance) {
-      return;
-    }
-
-    if (!isLastStep) {
-      setStepIndex((index) => index + 1);
-      return;
-    }
-
-    await onSubmit(answers, mode === "live" ? honeypot : undefined);
-  };
-
   const themeStyle = theme ? themeToCssVariables(theme) : undefined;
+  const stepLabel = multiSection
+    ? `Section ${stepIndex + 1} of ${steps.length}`
+    : `Question ${stepIndex + 1} of ${steps.length}`;
 
   return (
     <div
@@ -256,9 +341,12 @@ export function FormFillExperience({
       style={themeStyle}
     >
       <div className="mb-6 space-y-2 sm:mb-8">
-        <p className="text-sm font-medium opacity-80">
-          {stepIndex + 1} of {fields.length}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium opacity-80">{stepLabel}</p>
+          {draftRestored && mode === "live" ? (
+            <p className="text-muted-foreground text-xs">Progress restored</p>
+          ) : null}
+        </div>
         <Progress
           value={progress}
           className="h-2"
@@ -266,6 +354,11 @@ export function FormFillExperience({
             theme ? ({ ["--primary" as string]: theme.primaryColor } as CSSProperties) : undefined
           }
         />
+        {mode === "live" ? (
+          <p className="text-muted-foreground text-xs">
+            Press Enter to continue · Arrow keys to move between steps
+          </p>
+        ) : null}
       </div>
 
       <Card
@@ -299,24 +392,25 @@ export function FormFillExperience({
               className="pointer-events-none absolute -left-[9999px] h-0 w-0 opacity-0"
             />
           ) : null}
-          {currentField ? (
-            <Field>
-              <FieldLabel htmlFor={currentField.labelKey}>
-                {currentField.label}
-                {currentField.isRequired ? " *" : ""}
+
+          {currentStep.map((field) => (
+            <Field key={field.id}>
+              <FieldLabel htmlFor={field.labelKey}>
+                {field.label}
+                {field.isRequired ? " *" : ""}
               </FieldLabel>
-              {currentField.description ? (
-                <FieldDescription>{currentField.description}</FieldDescription>
+              {field.description ? (
+                <FieldDescription>{field.description}</FieldDescription>
               ) : null}
               <FieldInput
-                field={currentField}
-                value={answers[currentField.labelKey]}
+                field={field}
+                value={answers[field.labelKey]}
                 onChange={(value) =>
-                  setAnswers((prev) => ({ ...prev, [currentField.labelKey]: value }))
+                  setAnswers((prev) => ({ ...prev, [field.labelKey]: value }))
                 }
               />
             </Field>
-          ) : null}
+          ))}
 
           {submitError ? (
             <p className="text-destructive text-sm">
@@ -329,7 +423,7 @@ export function FormFillExperience({
               type="button"
               variant="outline"
               disabled={stepIndex === 0 || isSubmitting}
-              onClick={() => setStepIndex((index) => Math.max(0, index - 1))}
+              onClick={handleBack}
             >
               Back
             </Button>

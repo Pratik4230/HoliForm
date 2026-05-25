@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useForm } from "react-hook-form";
 import {
+  Archive,
+  ArchiveRestore,
   ArrowDown,
   ArrowUp,
   BarChart3,
@@ -19,7 +22,6 @@ import { toast } from "sonner";
 import {
   formFieldTypeModel,
   upsertFormFieldInputModel,
-  updateFormInputFormModel,
   type UpdateFormInput,
 } from "@repo/validators/forms";
 import { Badge } from "~/components/ui/badge";
@@ -58,6 +60,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Switch } from "~/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Textarea } from "~/components/ui/textarea";
@@ -66,6 +69,7 @@ import { getPublicFormUrl } from "~/lib/form-url";
 import { useSession } from "~/hooks/api/auth";
 import {
   type EditorField,
+  useArchiveForm,
   useCloneForm,
   useDeleteFormField,
   useFormById,
@@ -73,10 +77,12 @@ import {
   useReorderFormField,
   useSetFormAcceptingResponses,
   useSetFormVisibility,
+  useUnarchiveForm,
   useUnpublishForm,
   useUpdateForm,
   useUpsertFormField,
 } from "~/hooks/api/form";
+import { formHasMultipleSections } from "~/lib/form-fill-pages";
 import { FormThemePicker } from "~/components/forms/form-theme-picker";
 
 const FIELD_TYPES = formFieldTypeModel.options;
@@ -105,10 +111,14 @@ function slugifyLabel(label: string) {
 function FieldEditorDialog({
   formId,
   field,
+  defaultPageIndex = 0,
+  newFieldLabel = "Add field",
   onSaved,
 }: {
   formId: string;
   field?: EditorField;
+  defaultPageIndex?: number;
+  newFieldLabel?: string;
   onSaved: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -124,6 +134,7 @@ function FieldEditorDialog({
           label: field.label,
           labelKey: field.labelKey,
           type: field.type,
+          pageIndex: field.pageIndex,
           isRequired: field.isRequired,
           description: field.description ?? undefined,
           placeholder: field.placeholder ?? undefined,
@@ -134,6 +145,7 @@ function FieldEditorDialog({
           label: "",
           labelKey: "",
           type: "text" as const,
+          pageIndex: defaultPageIndex,
           isRequired: false,
           description: undefined,
           placeholder: undefined,
@@ -162,9 +174,9 @@ function FieldEditorDialog({
             Edit
           </Button>
         ) : (
-          <Button>
+          <Button variant={newFieldLabel === "Add section" ? "outline" : "default"}>
             <Plus className="size-4" />
-            Add field
+            {newFieldLabel}
           </Button>
         )}
       </DialogTrigger>
@@ -289,6 +301,27 @@ function FieldEditorDialog({
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="pageIndex"
+              render={({ field: f }) => (
+                <FormItem>
+                  <FormLabel>Section (page)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={f.value ?? 0}
+                      onChange={(e) => f.onChange(Number(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <p className="text-muted-foreground text-xs">
+                    Use 0 for the first section. Fields with the same number appear on one page.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             {needsChoices ? (
               <div className="space-y-2">
                 <Label>Choices (one per line)</Label>
@@ -330,16 +363,29 @@ function FieldEditorDialog({
 export function FormEditor({ formId }: { formId: string }) {
   const session = useSession();
   const { data, isLoading, refetch } = useFormById(formId);
+  const [expiresAtLocal, setExpiresAtLocal] = useState("");
+  const [maxResponsesInput, setMaxResponsesInput] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [clearPassword, setClearPassword] = useState(false);
 
-  const settingsForm = useForm<UpdateFormInput>({
-    resolver: zodResolver(updateFormInputFormModel),
+  const settingsFormSchema = z.object({
+    formId: z.string().uuid(),
+    title: z.string().min(1),
+    description: z.string(),
+    slug: z.string().min(1),
+    thankYouMessage: z.string(),
+  });
+
+  type SettingsFormValues = z.infer<typeof settingsFormSchema>;
+
+  const settingsForm = useForm<SettingsFormValues>({
+    resolver: zodResolver(settingsFormSchema),
     defaultValues: {
       formId,
       title: "",
       description: "",
       slug: "",
       thankYouMessage: "",
-      themeId: null,
     },
   });
 
@@ -353,11 +399,22 @@ export function FormEditor({ formId }: { formId: string }) {
       description: data.form.description,
       slug: data.form.slug,
       thankYouMessage: data.form.thankYouMessage ?? "",
-      themeId: data.form.themeId,
     });
+    setExpiresAtLocal(
+      data.form.expiresAt
+        ? new Date(data.form.expiresAt).toISOString().slice(0, 16)
+        : "",
+    );
+    setMaxResponsesInput(
+      data.form.maxResponses != null ? String(data.form.maxResponses) : "",
+    );
+    setNewPassword("");
+    setClearPassword(false);
   }, [data, formId, settingsForm]);
 
   const updateForm = useUpdateForm(formId);
+  const archiveForm = useArchiveForm(formId);
+  const unarchiveForm = useUnarchiveForm(formId);
   const publish = usePublishForm(formId);
   const unpublish = useUnpublishForm(formId);
   const setVisibility = useSetFormVisibility(formId);
@@ -375,6 +432,9 @@ export function FormEditor({ formId }: { formId: string }) {
   }
 
   const { form, fields } = data;
+  const isArchived = Boolean(form.archivedAt);
+  const maxPageIndex = fields.reduce((max, field) => Math.max(max, field.pageIndex), 0);
+  const showSectionLabels = formHasMultipleSections(fields);
   const username = session.data?.username ?? "";
   const shareUrl =
     form.status === "published" && username
@@ -397,6 +457,22 @@ export function FormEditor({ formId }: { formId: string }) {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
+      {isArchived ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900 dark:bg-amber-950/40">
+          <p className="font-medium text-amber-900 dark:text-amber-100">
+            This form is archived and hidden from respondents.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={unarchiveForm.isPending}
+            onClick={() => unarchiveForm.mutate({ formId })}
+          >
+            <ArchiveRestore className="size-4" />
+            Restore
+          </Button>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{form.title}</h1>
@@ -409,21 +485,34 @@ export function FormEditor({ formId }: { formId: string }) {
               Responses
             </Link>
           </Button>
-          {form.status === "published" ? (
+          {!isArchived ? (
+            form.status === "published" ? (
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => unpublish.mutate({ formId })}
+              >
+                Unpublish
+              </Button>
+            ) : (
+              <Button onClick={() => publish.mutate({ formId })}>Publish</Button>
+            )
+          ) : null}
+          {!isArchived ? (
             <Button
               variant="outline"
               className="rounded-full"
-              onClick={() => unpublish.mutate({ formId })}
+              disabled={archiveForm.isPending}
+              onClick={() => {
+                if (confirm(`Archive "${form.title}"? It will be unpublished and hidden.`)) {
+                  archiveForm.mutate({ formId });
+                }
+              }}
             >
-              Unpublish
+              <Archive className="size-4" />
+              Archive
             </Button>
-          ) : (
-            <Button
-              onClick={() => publish.mutate({ formId })}
-            >
-              Publish
-            </Button>
-          )}
+          ) : null}
           <Button variant="outline" className="rounded-full" asChild>
             <Link href={`/preview/${formId}`}>
               <Eye className="size-4" />
@@ -480,7 +569,15 @@ export function FormEditor({ formId }: { formId: string }) {
                 <CardTitle>Questions</CardTitle>
                 <CardDescription>{fields.length} field(s)</CardDescription>
               </div>
-              <FieldEditorDialog formId={formId} onSaved={() => void refetch()} />
+              <div className="flex flex-wrap gap-2">
+                <FieldEditorDialog formId={formId} onSaved={() => void refetch()} />
+                <FieldEditorDialog
+                  formId={formId}
+                  defaultPageIndex={maxPageIndex + 1}
+                  newFieldLabel="Add section"
+                  onSaved={() => void refetch()}
+                />
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {fields.length === 0 ? (
@@ -503,9 +600,14 @@ export function FormEditor({ formId }: { formId: string }) {
                           {field.isRequired ? " · required" : ""}
                         </p>
                       </div>
-                      <Badge variant="outline" className="shrink-0">
-                        #{i + 1}
-                      </Badge>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        <Badge variant="outline">#{i + 1}</Badge>
+                        {showSectionLabels ? (
+                          <Badge variant="secondary" className="text-xs">
+                            Section {field.pageIndex + 1}
+                          </Badge>
+                        ) : null}
+                      </div>
                       <div className="flex gap-1">
                         <Button
                           size="icon"
@@ -557,9 +659,23 @@ export function FormEditor({ formId }: { formId: string }) {
               <Form {...settingsForm}>
                 <form
                   className="space-y-4"
-                  onSubmit={settingsForm.handleSubmit((values) =>
-                    updateForm.mutate(values),
-                  )}
+                  onSubmit={settingsForm.handleSubmit((values: SettingsFormValues) => {
+                    const payload: UpdateFormInput = { ...values };
+                    payload.expiresAt = expiresAtLocal ? new Date(expiresAtLocal) : null;
+                    const parsedMax = maxResponsesInput.trim()
+                      ? Number.parseInt(maxResponsesInput, 10)
+                      : null;
+                    payload.maxResponses =
+                      parsedMax != null && Number.isFinite(parsedMax) && parsedMax > 0
+                        ? parsedMax
+                        : null;
+                    if (clearPassword) {
+                      payload.accessPassword = null;
+                    } else if (newPassword.trim()) {
+                      payload.accessPassword = newPassword.trim();
+                    }
+                    updateForm.mutate(payload);
+                  })}
                 >
                   <FormField
                     control={settingsForm.control}
@@ -613,6 +729,53 @@ export function FormEditor({ formId }: { formId: string }) {
                       </FormItem>
                     )}
                   />
+                  <div className="space-y-2">
+                    <Label htmlFor="expires-at">Expiry date (optional)</Label>
+                    <Input
+                      id="expires-at"
+                      type="datetime-local"
+                      value={expiresAtLocal}
+                      onChange={(e) => setExpiresAtLocal(e.target.value)}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      After this time, the form stops accepting new responses.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="max-responses">Response limit (optional)</Label>
+                    <Input
+                      id="max-responses"
+                      type="number"
+                      min={1}
+                      placeholder="Unlimited"
+                      value={maxResponsesInput}
+                      onChange={(e) => setMaxResponsesInput(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2 rounded-lg border p-4">
+                    <p className="font-medium">Access password</p>
+                    <p className="text-muted-foreground text-sm">
+                      {form.requiresPassword
+                        ? "A password is set. Enter a new one to replace it, or clear below."
+                        : "Optional password respondents must enter before filling the form."}
+                    </p>
+                    <Input
+                      type="password"
+                      placeholder={form.requiresPassword ? "New password" : "Set password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                    {form.requiresPassword ? (
+                      <label className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={clearPassword}
+                          onCheckedChange={(checked) => setClearPassword(Boolean(checked))}
+                        />
+                        Remove password protection
+                      </label>
+                    ) : null}
+                  </div>
                   <Button type="submit">
                     Save settings
                   </Button>

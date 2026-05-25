@@ -22,6 +22,10 @@ export const formRecordOutputModel = z.object({
   themeId: z.string().nullable().describe("Theme id"),
   thankYouMessage: z.string().nullable().describe("Message after submit"),
   closedAt: z.coerce.date().nullable().describe("When responses were closed"),
+  expiresAt: z.coerce.date().nullable().describe("Stop accepting after this time"),
+  maxResponses: z.number().int().positive().nullable().describe("Max submissions allowed"),
+  archivedAt: z.coerce.date().nullable().describe("When the form was archived"),
+  requiresPassword: z.boolean().describe("Whether respondents need a password"),
   createdAt: z.coerce.date().nullable().describe("Created at"),
   updatedAt: z.coerce.date().nullable().describe("Updated at"),
 });
@@ -63,6 +67,15 @@ export const updateFormInputModel = z.object({
     .nullable()
     .optional()
     .describe("Message shown after submit"),
+  expiresAt: z.coerce.date().nullable().optional().describe("Expiry date/time"),
+  maxResponses: z.number().int().positive().nullable().optional().describe("Response cap"),
+  accessPassword: z
+    .string()
+    .min(4)
+    .max(128)
+    .nullable()
+    .optional()
+    .describe("Set or replace access password; null clears it"),
 });
 
 /** Client-side / form validation; avoid on tRPC input (breaks OpenAPI .omit()). */
@@ -72,7 +85,10 @@ export const updateFormInputFormModel = updateFormInputModel.refine(
     data.description !== undefined ||
     data.slug !== undefined ||
     data.themeId !== undefined ||
-    data.thankYouMessage !== undefined,
+    data.thankYouMessage !== undefined ||
+    data.expiresAt !== undefined ||
+    data.maxResponses !== undefined ||
+    data.accessPassword !== undefined,
   { message: "At least one field to update is required" },
 );
 
@@ -125,3 +141,15 @@ export const setFormAcceptingResponsesInputModel = z.object({
 export type SetFormAcceptingResponsesInput = z.infer<
   typeof setFormAcceptingResponsesInputModel
 >;
+
+export const archiveFormInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+});
+
+export type ArchiveFormInput = z.infer<typeof archiveFormInputModel>;
+
+export const unarchiveFormInputModel = z.object({
+  formId: z.uuid().describe("Form id"),
+});
+
+export type UnarchiveFormInput = z.infer<typeof unarchiveFormInputModel>;

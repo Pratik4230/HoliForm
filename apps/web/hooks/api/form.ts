@@ -99,6 +99,40 @@ export function useDeleteForm() {
   });
 }
 
+export function useArchiveForm(formId: string) {
+  const utils = useFormsUtils();
+
+  return trpc.forms.archiveForm.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.forms.getFormById.invalidate({ formId }),
+        utils.forms.listForms.invalidate(),
+      ]);
+      toast.success("Form archived");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to archive form");
+    },
+  });
+}
+
+export function useUnarchiveForm(formId: string) {
+  const utils = useFormsUtils();
+
+  return trpc.forms.unarchiveForm.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.forms.getFormById.invalidate({ formId }),
+        utils.forms.listForms.invalidate(),
+      ]);
+      toast.success("Form restored");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to restore form");
+    },
+  });
+}
+
 export function useCloneForm(options?: { onSuccess?: (cloned: FormRecord) => void }) {
   const utils = useFormsUtils();
   const router = useRouter();
@@ -217,6 +251,18 @@ export function useSubmitFormResponse(options?: {
       const code = getApiErrorCode(error);
       if (code === API_ERROR_CODES.RATE_LIMIT_EXCEEDED) {
         toast.error("Too many submissions. Please wait a few minutes and try again.");
+        return;
+      }
+      if (code === API_ERROR_CODES.FORM_PASSWORD_INVALID) {
+        toast.error("Incorrect form password.");
+        return;
+      }
+      if (code === API_ERROR_CODES.FORM_EXPIRED) {
+        toast.error("This form has expired.");
+        return;
+      }
+      if (code === API_ERROR_CODES.FORM_RESPONSE_LIMIT_REACHED) {
+        toast.error("This form is full.");
         return;
       }
       toast.error(error.message || "Could not submit your answers");

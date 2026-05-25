@@ -11,6 +11,9 @@ import {
   unpublishFormInputModel,
   updateFormInputModel,
   type CreateFormInput,
+  archiveFormInputModel,
+  unarchiveFormInputModel,
+  type ArchiveFormInput,
   type CloneFormInput,
   type DeleteFormInput,
   type DeleteFormOutput,
@@ -20,12 +23,14 @@ import {
   type PublishFormInput,
   type SetFormAcceptingResponsesInput,
   type SetFormVisibilityInput,
+  type UnarchiveFormInput,
   type UnpublishFormInput,
   type UpdateFormInput,
 } from "@repo/validators/forms";
 
 import { API_ERROR_CODES } from "@repo/validators/api-errors";
 import { AppServiceError } from "../errors";
+import { createFormAccessPasswordCredentials } from "./accessPassword";
 import { mapFormFieldRecord, mapFormRecord } from "./mappers";
 import { getOwnedFormOrThrow } from "./ownership";
 import { ensureUniqueSlug, slugExistsForUser, slugify } from "./slug";
@@ -115,15 +120,27 @@ export async function getFormById(
 }
 
 export async function updateForm(userId: string, payload: UpdateFormInput): Promise<FormRecord> {
-  const { formId, title, description, slug: slugInput, themeId, thankYouMessage } =
-    await updateFormInputModel.parseAsync(payload);
+  const {
+    formId,
+    title,
+    description,
+    slug: slugInput,
+    themeId,
+    thankYouMessage,
+    expiresAt,
+    maxResponses,
+    accessPassword,
+  } = await updateFormInputModel.parseAsync(payload);
 
   if (
     title === undefined &&
     description === undefined &&
     slugInput === undefined &&
     themeId === undefined &&
-    thankYouMessage === undefined
+    thankYouMessage === undefined &&
+    expiresAt === undefined &&
+    maxResponses === undefined &&
+    accessPassword === undefined
   ) {
     throw new AppServiceError(
       "At least one field to update is required",
@@ -159,6 +176,22 @@ export async function updateForm(userId: string, payload: UpdateFormInput): Prom
       );
     }
     updates.slug = slug;
+  }
+  if (expiresAt !== undefined) {
+    updates.expiresAt = expiresAt;
+  }
+  if (maxResponses !== undefined) {
+    updates.maxResponses = maxResponses;
+  }
+  if (accessPassword !== undefined) {
+    if (accessPassword === null) {
+      updates.accessPasswordSalt = null;
+      updates.accessPasswordHash = null;
+    } else {
+      const credentials = createFormAccessPasswordCredentials(accessPassword);
+      updates.accessPasswordSalt = credentials.salt;
+      updates.accessPasswordHash = credentials.hash;
+    }
   }
 
   const updated = await db
@@ -239,6 +272,7 @@ export async function cloneForm(userId: string, payload: CloneFormInput): Promis
           placeholder: field.placeholder,
           isRequired: field.isRequired,
           index: field.index,
+          pageIndex: field.pageIndex,
           type: field.type,
           options: field.options,
           validationRules: field.validationRules,
@@ -248,6 +282,45 @@ export async function cloneForm(userId: string, payload: CloneFormInput): Promis
 
     return mapFormRecord(form);
   });
+}
+
+export async function archiveForm(userId: string, payload: ArchiveFormInput): Promise<FormRecord> {
+  const { formId } = await archiveFormInputModel.parseAsync(payload);
+  await getOwnedFormOrThrow(userId, formId);
+
+  const updated = await db
+    .update(formsTable)
+    .set({ archivedAt: new Date(), status: "draft" })
+    .where(and(eq(formsTable.id, formId), eq(formsTable.userId, userId)))
+    .returning();
+
+  const form = updated[0];
+  if (!form) {
+    throw new AppServiceError("Failed to archive form", API_ERROR_CODES.INTERNAL_ERROR);
+  }
+
+  return mapFormRecord(form);
+}
+
+export async function unarchiveForm(
+  userId: string,
+  payload: UnarchiveFormInput,
+): Promise<FormRecord> {
+  const { formId } = await unarchiveFormInputModel.parseAsync(payload);
+  await getOwnedFormOrThrow(userId, formId);
+
+  const updated = await db
+    .update(formsTable)
+    .set({ archivedAt: null })
+    .where(and(eq(formsTable.id, formId), eq(formsTable.userId, userId)))
+    .returning();
+
+  const form = updated[0];
+  if (!form) {
+    throw new AppServiceError("Failed to restore form", API_ERROR_CODES.INTERNAL_ERROR);
+  }
+
+  return mapFormRecord(form);
 }
 
 export async function publishForm(userId: string, payload: PublishFormInput): Promise<FormRecord> {

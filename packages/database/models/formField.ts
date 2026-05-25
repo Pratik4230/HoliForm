@@ -1,5 +1,6 @@
 import {
   boolean,
+  integer,
   jsonb,
   numeric,
   pgEnum,
@@ -57,6 +58,7 @@ export const formFieldsTable = pgTable(
     isRequired: boolean("is_required").default(false).notNull(),
 
     index: numeric("index", { precision: 20, scale: 10 }).notNull(),
+    pageIndex: integer("page_index").default(0).notNull(),
 
     type: formFieldTypeEnum("type").notNull(),
 

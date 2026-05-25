@@ -48,6 +48,15 @@ export function getPublicFormErrorMessage(error: TrpcClientError | null | undefi
       return "We could not find this form. The link may be wrong or the form was removed.";
     case API_ERROR_CODES.FORM_NOT_ACCEPTING_RESPONSES:
       return "This form is no longer accepting responses.";
+    case API_ERROR_CODES.FORM_EXPIRED:
+      return "This form has expired and is no longer accepting responses.";
+    case API_ERROR_CODES.FORM_RESPONSE_LIMIT_REACHED:
+      return "This form has reached its response limit.";
+    case API_ERROR_CODES.FORM_ARCHIVED:
+      return "This form is no longer available.";
+    case API_ERROR_CODES.FORM_PASSWORD_REQUIRED:
+    case API_ERROR_CODES.FORM_PASSWORD_INVALID:
+      return "A valid password is required to open this form.";
     case API_ERROR_CODES.RATE_LIMIT_EXCEEDED:
       return "Too many submissions from your network. Please wait a few minutes and try again.";
     default:

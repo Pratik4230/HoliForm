@@ -4,6 +4,7 @@ import { mapServiceError } from "../../utils/map-service-error";
 import { protectedOpenApiMeta, publicOpenApiMeta } from "../../utils/openapi-meta";
 import { generatePath } from "../../utils/path-generator";
 import {
+  archiveFormInputModel,
   cloneFormInputModel,
   createFormInputModel,
   deleteFormFieldInputModel,
@@ -28,9 +29,12 @@ import {
   reorderFormFieldInputModel,
   setFormAcceptingResponsesInputModel,
   setFormVisibilityInputModel,
+  unarchiveFormInputModel,
   unpublishFormInputModel,
   updateFormInputModel,
   upsertFormFieldInputModel,
+  verifyFormAccessInputModel,
+  verifyFormAccessOutputModel,
 } from "@repo/validators/forms";
 
 const TAGS = ["Forms"];
@@ -96,6 +100,30 @@ export const formsRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.deleteForm(ctx.user.id, input);
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+
+  archiveForm: protectedProcedure
+    .meta(protectedOpenApiMeta("POST", getPath("/archiveForm"), TAGS))
+    .input(archiveFormInputModel)
+    .output(formRecordOutputModel)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await formService.archiveForm(ctx.user.id, input);
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+
+  unarchiveForm: protectedProcedure
+    .meta(protectedOpenApiMeta("POST", getPath("/unarchiveForm"), TAGS))
+    .input(unarchiveFormInputModel)
+    .output(formRecordOutputModel)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await formService.unarchiveForm(ctx.user.id, input);
       } catch (error) {
         mapServiceError(error);
       }
@@ -192,6 +220,18 @@ export const formsRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         return await formService.reorderFormField(ctx.user.id, input);
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+
+  verifyFormAccess: publicProcedure
+    .meta(publicOpenApiMeta("POST", getPath("/verifyFormAccess"), TAGS))
+    .input(verifyFormAccessInputModel)
+    .output(verifyFormAccessOutputModel)
+    .mutation(async ({ input }) => {
+      try {
+        return await formService.verifyFormAccess(input);
       } catch (error) {
         mapServiceError(error);
       }

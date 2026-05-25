@@ -21,6 +21,14 @@ export const publicFormOutputModel = z.object({
   thankYouMessage: z.string().nullable().describe("Message after submit"),
   acceptingResponses: z.boolean().describe("Whether the form accepts new submissions"),
   closedAt: z.coerce.date().nullable().describe("When responses were closed"),
+  expiresAt: z.coerce.date().nullable().describe("Expiry time if set"),
+  maxResponses: z.number().int().positive().nullable().describe("Response cap if set"),
+  responseCount: z.number().int().describe("Current response count"),
+  requiresPassword: z.boolean().describe("Whether a password is required"),
+  availabilityReason: z
+    .enum(["closed", "expired", "response_limit", "archived"])
+    .nullable()
+    .describe("Why submissions are blocked, if any"),
 });
 
 export type PublicFormRecord = z.infer<typeof publicFormOutputModel>;
@@ -33,6 +41,20 @@ export const getPublicFormOutputModel = z.object({
 
 export type GetPublicFormOutput = z.infer<typeof getPublicFormOutputModel>;
 
+export const verifyFormAccessInputModel = z.object({
+  username: usernameModel.describe("Creator username"),
+  slug: z.string().min(1).max(128).describe("Form slug"),
+  password: z.string().min(1).max(128).describe("Form access password"),
+});
+
+export type VerifyFormAccessInput = z.infer<typeof verifyFormAccessInputModel>;
+
+export const verifyFormAccessOutputModel = z.object({
+  valid: z.boolean().describe("Whether the password is correct"),
+});
+
+export type VerifyFormAccessOutput = z.infer<typeof verifyFormAccessOutputModel>;
+
 /** Hidden from users; bots often fill this. Must stay empty. */
 export const honeypotFieldModel = z
   .string()
@@ -44,6 +66,7 @@ export const submitFormResponseInputModel = z.object({
   username: usernameModel.describe("Creator username"),
   slug: z.string().min(1).max(128).describe("Form slug"),
   answers: z.record(z.string(), z.unknown()).describe("Answers keyed by field labelKey"),
+  accessPassword: z.string().min(1).max(128).optional().describe("Required when form is protected"),
   _hpWebsite: honeypotFieldModel,
 });
 

@@ -1,4 +1,13 @@
-import { pgEnum, pgTable, text, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { formThemesTable } from "./formTheme";
 import { usersTable } from "./user";
 
@@ -22,6 +31,11 @@ export const formsTable = pgTable(
     thankYouMessage: text("thank_you_message").default("Thank you for your response!"),
 
     closedAt: timestamp("closed_at"),
+    expiresAt: timestamp("expires_at"),
+    maxResponses: integer("max_responses"),
+    archivedAt: timestamp("archived_at"),
+    accessPasswordSalt: text("access_password_salt"),
+    accessPasswordHash: text("access_password_hash"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   },

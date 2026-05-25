@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { and, asc, db, desc, eq } from "@repo/database";
+import { and, asc, count, db, desc, eq, isNull } from "@repo/database";
 import { formsTable } from "@repo/database/models/form";
 import { formFieldsTable } from "@repo/database/models/formField";
 import {
@@ -14,6 +14,7 @@ import {
   getPublicFormInputModel,
   listPublicFormsInputModel,
   submitFormResponseInputModel,
+  verifyFormAccessInputModel,
   type GetPublicFormInput,
   type GetPublicFormOutput,
   type ListPublicFormsInput,
@@ -22,19 +23,29 @@ import {
   type PublicFormRecord,
   type SubmitFormResponseInput,
   type SubmitFormResponseOutput,
+  type VerifyFormAccessInput,
+  type VerifyFormAccessOutput,
 } from "@repo/validators/forms";
 
 import { inngest, INNGEST_EVENTS } from "@repo/inngest";
 
 import { AppServiceError } from "../errors";
+import {
+  formRequiresPassword,
+  verifyFormAccessPassword,
+} from "./accessPassword";
 import { buildSubmissionSchemaFromFields } from "./buildSubmissionSchema";
+import { countFormResponses, getFormAvailability } from "./formLimits";
 import { mapFormFieldRecord } from "./mappers";
 import { resolveFormTheme } from "./themePresets";
 
 function mapPublicFormRecord(
   row: typeof formsTable.$inferSelect,
   username: string,
+  responseCount: number,
 ): PublicFormRecord {
+  const { acceptingResponses, reason } = getFormAvailability(row, responseCount);
+
   return {
     id: row.id,
     username,
@@ -43,9 +54,33 @@ function mapPublicFormRecord(
     slug: row.slug,
     themeId: row.themeId ?? null,
     thankYouMessage: row.thankYouMessage ?? null,
-    acceptingResponses: row.closedAt === null,
+    acceptingResponses,
     closedAt: row.closedAt ?? null,
+    expiresAt: row.expiresAt ?? null,
+    maxResponses: row.maxResponses ?? null,
+    responseCount,
+    requiresPassword: formRequiresPassword(row.accessPasswordSalt, row.accessPasswordHash),
+    availabilityReason: reason,
   };
+}
+
+function throwAvailabilityError(reason: ReturnType<typeof getFormAvailability>["reason"]) {
+  switch (reason) {
+    case "expired":
+      throw new AppServiceError("This form has expired", API_ERROR_CODES.FORM_EXPIRED);
+    case "response_limit":
+      throw new AppServiceError(
+        "This form has reached its response limit",
+        API_ERROR_CODES.FORM_RESPONSE_LIMIT_REACHED,
+      );
+    case "archived":
+      throw new AppServiceError("This form is no longer available", API_ERROR_CODES.FORM_ARCHIVED);
+    default:
+      throw new AppServiceError(
+        "Form is not accepting responses",
+        API_ERROR_CODES.FORM_NOT_ACCEPTING_RESPONSES,
+      );
+  }
 }
 
 async function getPublishedFormRow(username: string, slug: string) {
@@ -71,8 +106,8 @@ async function getPublishedFormRow(username: string, slug: string) {
     throw new AppServiceError("Form not found", API_ERROR_CODES.FORM_NOT_FOUND);
   }
 
-  if (form.status !== "published") {
-    throw new AppServiceError("This form is not published", API_ERROR_CODES.FORM_NOT_PUBLISHED);
+  if (form.status !== "published" || form.archivedAt) {
+    throw new AppServiceError("Form not found", API_ERROR_CODES.FORM_NOT_FOUND);
   }
 
   return { form, username: creator.username };
@@ -88,25 +123,69 @@ async function loadPublishedFormContext(username: string, slug: string) {
     .orderBy(asc(formFieldsTable.index));
 
   const fields = fieldRows.map((row) => mapFormFieldRecord(row));
+  const responseCount = await countFormResponses(form.id);
 
   return {
     form,
     username: creatorUsername,
     fields,
+    responseCount,
   };
+}
+
+function assertFormAccessPassword(
+  form: typeof formsTable.$inferSelect,
+  password: string | undefined,
+) {
+  const protectedForm = formRequiresPassword(form.accessPasswordSalt, form.accessPasswordHash);
+  if (!protectedForm) {
+    return;
+  }
+
+  if (!password) {
+    throw new AppServiceError(
+      "Password is required to submit this form",
+      API_ERROR_CODES.FORM_PASSWORD_REQUIRED,
+    );
+  }
+
+  if (
+    !verifyFormAccessPassword(password, form.accessPasswordSalt, form.accessPasswordHash)
+  ) {
+    throw new AppServiceError("Incorrect form password", API_ERROR_CODES.FORM_PASSWORD_INVALID);
+  }
 }
 
 export async function getPublicForm(payload: GetPublicFormInput): Promise<GetPublicFormOutput> {
   const { username, slug } = await getPublicFormInputModel.parseAsync(payload);
-  const { form, username: creatorUsername, fields } = await loadPublishedFormContext(
+  const { form, username: creatorUsername, fields, responseCount } = await loadPublishedFormContext(
     username,
     slug,
   );
 
   return {
-    form: mapPublicFormRecord(form, creatorUsername),
+    form: mapPublicFormRecord(form, creatorUsername, responseCount),
     fields,
     theme: resolveFormTheme(form.themeId),
+  };
+}
+
+export async function verifyFormAccess(
+  payload: VerifyFormAccessInput,
+): Promise<VerifyFormAccessOutput> {
+  const { username, slug, password } = await verifyFormAccessInputModel.parseAsync(payload);
+  const { form } = await getPublishedFormRow(username, slug);
+
+  if (!formRequiresPassword(form.accessPasswordSalt, form.accessPasswordHash)) {
+    return { valid: true };
+  }
+
+  return {
+    valid: verifyFormAccessPassword(
+      password,
+      form.accessPasswordSalt,
+      form.accessPasswordHash,
+    ),
   };
 }
 
@@ -120,7 +199,13 @@ export async function listPublicForms(payload: ListPublicFormsInput): Promise<Li
     })
     .from(formsTable)
     .innerJoin(usersTable, eq(formsTable.userId, usersTable.id))
-    .where(and(eq(formsTable.status, "published"), eq(formsTable.visibility, "public")))
+    .where(
+      and(
+        eq(formsTable.status, "published"),
+        eq(formsTable.visibility, "public"),
+        isNull(formsTable.archivedAt),
+      ),
+    )
     .orderBy(desc(formsTable.updatedAt))
     .limit(limit);
 
@@ -131,7 +216,7 @@ export async function listPublicForms(payload: ListPublicFormsInput): Promise<Li
       title: row.form.title,
       description: row.form.description,
       slug: row.form.slug,
-      acceptingResponses: row.form.closedAt === null,
+      acceptingResponses: getFormAvailability(row.form, 0).acceptingResponses,
       updatedAt: row.form.updatedAt ?? null,
     }),
   );
@@ -142,7 +227,7 @@ export async function submitFormResponse(
   options?: { respondentIp?: string },
 ): Promise<SubmitFormResponseOutput> {
   const parsed = await submitFormResponseInputModel.parseAsync(payload);
-  const { username, slug, answers, _hpWebsite } = parsed;
+  const { username, slug, answers, accessPassword, _hpWebsite } = parsed;
 
   if (_hpWebsite?.trim()) {
     const { form } = await loadPublishedFormContext(username, slug);
@@ -153,14 +238,14 @@ export async function submitFormResponse(
     };
   }
 
-  const { form, fields } = await loadPublishedFormContext(username, slug);
+  const { form, fields, responseCount } = await loadPublishedFormContext(username, slug);
 
-  if (form.closedAt !== null) {
-    throw new AppServiceError(
-      "Form is not accepting responses",
-      API_ERROR_CODES.FORM_NOT_ACCEPTING_RESPONSES,
-    );
+  const availability = getFormAvailability(form, responseCount);
+  if (!availability.acceptingResponses) {
+    throwAvailabilityError(availability.reason);
   }
+
+  assertFormAccessPassword(form, accessPassword);
 
   const submissionSchema = buildSubmissionSchemaFromFields(fields);
   const validatedAnswers = await submissionSchema.parseAsync(answers);
@@ -171,6 +256,20 @@ export async function submitFormResponse(
   }
 
   const result = await db.transaction(async (tx) => {
+    const [countRow] = await tx
+      .select({ total: count() })
+      .from(formResponsesTable)
+      .where(eq(formResponsesTable.formId, form.id));
+
+    const currentCount = Number(countRow?.total ?? responseCount);
+    const txAvailability = getFormAvailability(form, currentCount);
+    if (!txAvailability.acceptingResponses && txAvailability.reason === "response_limit") {
+      throw new AppServiceError(
+        "This form has reached its response limit",
+        API_ERROR_CODES.FORM_RESPONSE_LIMIT_REACHED,
+      );
+    }
+
     const insertedResponses = await tx
       .insert(formResponsesTable)
       .values({
