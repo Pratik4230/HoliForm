@@ -1,6 +1,29 @@
 CREATE TYPE "public"."form_status" AS ENUM('draft', 'published');--> statement-breakpoint
 CREATE TYPE "public"."form_visibility" AS ENUM('public', 'unlisted');--> statement-breakpoint
-CREATE TYPE "public"."form_field_type" AS ENUM('text', 'textarea', 'email', 'number', 'phone', 'date', 'time', 'checkbox', 'radio', 'select', 'multiselect', 'rating');--> statement-breakpoint
+CREATE TYPE "public"."form_field_type" AS ENUM('text', 'textarea', 'email', 'number', 'phone', 'date', 'checkbox', 'radio', 'select', 'multiselect');--> statement-breakpoint
+CREATE TABLE "users" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"username" varchar(32) NOT NULL,
+	"full_name" varchar(80) NOT NULL,
+	"email" varchar(255) NOT NULL,
+	"email_verified" boolean DEFAULT false,
+	"email_notifications_enabled" boolean DEFAULT true NOT NULL,
+	"profile_image_url" text,
+	"salt" text,
+	"password" text,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp,
+	CONSTRAINT "users_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "email_verification_otps" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"code_hash" text NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE "form_themes" (
 	"id" varchar(64) PRIMARY KEY NOT NULL,
 	"name" varchar(128) NOT NULL,
@@ -20,6 +43,12 @@ CREATE TABLE "forms" (
 	"visibility" "form_visibility" DEFAULT 'unlisted' NOT NULL,
 	"theme_id" varchar(64),
 	"thank_you_message" text DEFAULT 'Thank you for your response!',
+	"closed_at" timestamp,
+	"expires_at" timestamp,
+	"max_responses" integer,
+	"archived_at" timestamp,
+	"access_password_salt" text,
+	"access_password_hash" text,
 	"created_at" timestamp DEFAULT now(),
 	"updated_at" timestamp
 );
@@ -32,7 +61,8 @@ CREATE TABLE "form_fields" (
 	"description" text,
 	"placeholder" text,
 	"is_required" boolean DEFAULT false NOT NULL,
-	"index" integer NOT NULL,
+	"index" numeric(20, 10) NOT NULL,
+	"page_index" integer DEFAULT 0 NOT NULL,
 	"type" "form_field_type" NOT NULL,
 	"options" jsonb,
 	"validation_rules" jsonb,
@@ -55,15 +85,14 @@ CREATE TABLE "form_responses" (
 	"metadata" jsonb
 );
 --> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "salt" text;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "password" text;--> statement-breakpoint
+ALTER TABLE "email_verification_otps" ADD CONSTRAINT "email_verification_otps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "forms" ADD CONSTRAINT "forms_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "forms" ADD CONSTRAINT "forms_theme_id_form_themes_id_fk" FOREIGN KEY ("theme_id") REFERENCES "public"."form_themes"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "form_fields" ADD CONSTRAINT "form_fields_form_id_forms_id_fk" FOREIGN KEY ("form_id") REFERENCES "public"."forms"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "form_response_answers" ADD CONSTRAINT "form_response_answers_response_id_form_responses_id_fk" FOREIGN KEY ("response_id") REFERENCES "public"."form_responses"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "form_response_answers" ADD CONSTRAINT "form_response_answers_field_id_form_fields_id_fk" FOREIGN KEY ("field_id") REFERENCES "public"."form_fields"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "form_responses" ADD CONSTRAINT "form_responses_form_id_forms_id_fk" FOREIGN KEY ("form_id") REFERENCES "public"."forms"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE UNIQUE INDEX "forms_slug_unique" ON "forms" USING btree ("slug");--> statement-breakpoint
+CREATE UNIQUE INDEX "users_username_unique" ON "users" USING btree ("username");--> statement-breakpoint
+CREATE INDEX "email_verification_otps_user_id_idx" ON "email_verification_otps" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "forms_user_id_slug_unique" ON "forms" USING btree ("user_id","slug");--> statement-breakpoint
-CREATE UNIQUE INDEX "form_fields_form_id_index_unique" ON "form_fields" USING btree ("form_id","index");--> statement-breakpoint
 CREATE UNIQUE INDEX "form_fields_form_id_label_key_unique" ON "form_fields" USING btree ("form_id","label_key");

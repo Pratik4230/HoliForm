@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1779200696194,
-      "tag": "0000_talented_roulette",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1779376898810,
-      "tag": "0001_charming_captain_stacy",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1779378508645,
-      "tag": "0002_tired_tinkerer",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1779455839030,
-      "tag": "0003_slim_stardust",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1779510773697,
-      "tag": "0004_many_gressill",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1779600000000,
-      "tag": "0005_email_notifications_and_otp",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1779610000000,
-      "tag": "0006_form_theme_presets",
+      "when": 1779702279944,
+      "tag": "0000_small_killraven",
       "breakpoints": true
     }
   ]
