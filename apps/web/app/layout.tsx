@@ -12,6 +12,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "HoliForm — Form builder",
   description: "Build beautiful Typeform-style surveys and share them instantly.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ??
+      process.env.WEB_APP_URL ??
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"),
+  ),
 };
 
 export default function RootLayout({
