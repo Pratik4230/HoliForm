@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, BarChart3, Palette, Zap } from "lucide-react";
 import { FeaturedPublicForms } from "~/components/forms/featured-public-forms";
 import { SiteHeader } from "~/components/layout/site-header";
+import { HomeCtaSection } from "~/components/marketing/home-cta-section";
 import { Button } from "~/components/ui/button";
 
 const features = [
@@ -85,18 +86,7 @@ export default function HomePage() {
         ))}
       </section>
 
-      {/* ── CTA ── */}
-      <section className="mx-auto max-w-2xl px-4 pb-24">
-        <div className="rounded-2xl border border-border bg-card p-10 text-center">
-          <h2 className="text-2xl font-bold text-foreground">Ready to get started?</h2>
-          <p className="mt-2 text-muted-foreground">
-            Create your account, publish a form, share the link — done.
-          </p>
-          <Button asChild className="mt-6">
-            <Link href="/signup">Create a free account</Link>
-          </Button>
-        </div>
-      </section>
+      <HomeCtaSection />
     </div>
   );
 }

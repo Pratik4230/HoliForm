@@ -163,16 +163,53 @@ export async function reorderFormField(
   userId: string,
   payload: ReorderFormFieldInput,
 ): Promise<FormFieldRecord> {
-  const { formId, fieldId, index } = await reorderFormFieldInputModel.parseAsync(payload);
-  await getOwnedFieldOrThrow(userId, formId, fieldId);
+  const { formId, fieldId, index: targetIndex } =
+    await reorderFormFieldInputModel.parseAsync(payload);
+  const current = await getOwnedFieldOrThrow(userId, formId, fieldId);
 
-  const updated = await db
-    .update(formFieldsTable)
-    .set({ index })
+  if (current.index === targetIndex) {
+    return current;
+  }
+
+  const occupants = await db
+    .select({ id: formFieldsTable.id, index: formFieldsTable.index })
+    .from(formFieldsTable)
+    .where(
+      and(
+        eq(formFieldsTable.formId, formId),
+        eq(formFieldsTable.index, targetIndex),
+        ne(formFieldsTable.id, fieldId),
+      ),
+    )
+    .limit(1);
+
+  const occupant = occupants[0];
+
+  if (occupant) {
+    await db.transaction(async (tx) => {
+      await tx
+        .update(formFieldsTable)
+        .set({ index: current.index })
+        .where(eq(formFieldsTable.id, occupant.id));
+      await tx
+        .update(formFieldsTable)
+        .set({ index: targetIndex })
+        .where(eq(formFieldsTable.id, fieldId));
+    });
+  } else {
+    await db
+      .update(formFieldsTable)
+      .set({ index: targetIndex })
+      .where(and(eq(formFieldsTable.id, fieldId), eq(formFieldsTable.formId, formId)));
+  }
+
+  const rows = await db
+    .select()
+    .from(formFieldsTable)
     .where(and(eq(formFieldsTable.id, fieldId), eq(formFieldsTable.formId, formId)))
-    .returning();
+    .limit(1);
 
-  const field = updated[0];
+  const field = rows[0];
   if (!field) {
     throw new AppServiceError("Form field not found", API_ERROR_CODES.FORM_FIELD_NOT_FOUND);
   }

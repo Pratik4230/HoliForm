@@ -32,6 +32,7 @@ export function CreateFormForm() {
     defaultValues: {
       title: "",
       description: "",
+      slug: "",
     },
   });
 
@@ -49,9 +50,15 @@ export function CreateFormForm() {
       <CardContent>
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit((values) =>
-            createForm.mutate(createFormInputModel.parse(values)),
-          )}
+            onSubmit={form.handleSubmit((values) => {
+              const slug = values.slug?.trim();
+              createForm.mutate(
+                createFormInputModel.parse({
+                  ...values,
+                  slug: slug ? slug : undefined,
+                }),
+              );
+            })}
             className="space-y-4"
           >
             <FormField

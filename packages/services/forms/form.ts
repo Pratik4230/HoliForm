@@ -1,4 +1,4 @@
-import { and, asc, db, desc, eq } from "@repo/database";
+import { and, asc, db, desc, ensureFormThemePresets, eq } from "@repo/database";
 import { formsTable } from "@repo/database/models/form";
 import { formFieldsTable } from "@repo/database/models/formField";
 import {
@@ -42,7 +42,15 @@ function assertValidThemeId(themeId: string) {
   }
 }
 
+let themePresetsReady: Promise<void> | undefined;
+
+function ensureThemePresetsReady(): Promise<void> {
+  themePresetsReady ??= ensureFormThemePresets();
+  return themePresetsReady;
+}
+
 export async function createForm(userId: string, payload: CreateFormInput): Promise<FormRecord> {
+  await ensureThemePresetsReady();
   const { title, description, slug: slugInput, themeId } =
     await createFormInputModel.parseAsync(payload);
 

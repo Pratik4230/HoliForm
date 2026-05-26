@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, LayoutDashboard, LogOut, Plus, Settings } from "lucide-react";
+import {
+  Compass,
+  FileText,
+  Home,
+  LayoutDashboard,
+  LogOut,
+  Plus,
+  Settings,
+} from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -24,11 +32,26 @@ import { Separator } from "~/components/ui/separator";
 import { useSession, useSignOut } from "~/hooks/api/auth";
 import { cn } from "~/lib/utils";
 
-const menuItems = [
+const creatorMenuItems = [
   { href: "/dashboard", label: "My forms", icon: LayoutDashboard },
   { href: "/dashboard/forms/new", label: "New form", icon: Plus },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
+
+const siteMenuItems = [
+  { href: "/", label: "Home", icon: Home },
+  { href: "/explore", label: "Explore", icon: Compass },
+];
+
+function isNavItemActive(pathname: string, href: string) {
+  if (href === "/") {
+    return pathname === "/";
+  }
+  if (href === "/dashboard") {
+    return pathname === "/dashboard";
+  }
+  return pathname.startsWith(href);
+}
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -60,11 +83,44 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {menuItems.map((item) => {
-                  const isActive =
-                    item.href === "/dashboard"
-                      ? pathname === "/dashboard"
-                      : pathname.startsWith(item.href);
+                {creatorMenuItems.map((item) => {
+                  const isActive = isNavItemActive(pathname, item.href);
+                  return (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton asChild isActive={isActive}>
+                        <Link
+                          href={item.href}
+                          className={cn(
+                            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                            isActive
+                              ? "bg-accent text-accent-foreground"
+                              : "text-foreground hover:bg-accent/50",
+                          )}
+                        >
+                          <item.icon
+                            className={cn(
+                              "size-4",
+                              isActive ? "text-foreground" : "text-muted-foreground",
+                            )}
+                          />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Site
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {siteMenuItems.map((item) => {
+                  const isActive = isNavItemActive(pathname, item.href);
                   return (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton asChild isActive={isActive}>
@@ -109,7 +165,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <Button
             variant="ghost"
             className="mt-2 w-full justify-start text-sm text-muted-foreground hover:text-foreground"
-            onClick={() => signOutMutation.mutate()}
+            onClick={() => signOutMutation.mutate({})}
             disabled={signOutMutation.isPending}
           >
             <LogOut className="size-4" />

@@ -1,30 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import {
   Archive,
   ArchiveRestore,
-  ArrowDown,
-  ArrowUp,
   BarChart3,
   Copy,
   CopyPlus,
   ExternalLink,
   Eye,
   Plus,
-  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   formFieldTypeModel,
   upsertFormFieldInputModel,
   type UpdateFormInput,
+  type UpsertFormFieldInput,
 } from "@repo/validators/forms";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -45,6 +42,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -84,6 +82,7 @@ import {
 } from "~/hooks/api/form";
 import { formHasMultipleSections } from "~/lib/form-fill-pages";
 import { FormThemePicker } from "~/components/forms/form-theme-picker";
+import { FormFieldList } from "~/components/dashboard/form-field-list";
 
 const FIELD_TYPES = formFieldTypeModel.options;
 
@@ -108,6 +107,17 @@ function slugifyLabel(label: string) {
     .slice(0, 64);
 }
 
+function buildNewFieldDefaults(formId: string, defaultPageIndex: number): UpsertFormFieldInput {
+  return {
+    formId,
+    label: "",
+    labelKey: "",
+    type: "text",
+    pageIndex: defaultPageIndex,
+    isRequired: false,
+  };
+}
+
 function FieldEditorDialog({
   formId,
   field,
@@ -122,36 +132,43 @@ function FieldEditorDialog({
   onSaved: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [choicesText, setChoicesText] = useState(
-    field?.options?.choices?.join("\n") ?? "",
+  const [choicesText, setChoicesText] = useState("");
+
+  const emptyValues = useMemo(
+    () => buildNewFieldDefaults(formId, defaultPageIndex),
+    [formId, defaultPageIndex],
   );
 
-  const form = useForm({
-    defaultValues: field
-      ? {
-          formId,
-          fieldId: field.id,
-          label: field.label,
-          labelKey: field.labelKey,
-          type: field.type,
-          pageIndex: field.pageIndex,
-          isRequired: field.isRequired,
-          description: field.description ?? undefined,
-          placeholder: field.placeholder ?? undefined,
-          options: field.options ?? undefined,
-        }
-      : {
-          formId,
-          label: "",
-          labelKey: "",
-          type: "text" as const,
-          pageIndex: defaultPageIndex,
-          isRequired: false,
-          description: undefined,
-          placeholder: undefined,
-          options: undefined,
-        },
+  const form = useForm<UpsertFormFieldInput>({
+    defaultValues: emptyValues,
   });
+
+  const resetDialogState = useCallback(() => {
+    if (field) {
+      form.reset({
+        formId,
+        fieldId: field.id,
+        label: field.label,
+        labelKey: field.labelKey,
+        type: field.type,
+        pageIndex: field.pageIndex,
+        isRequired: field.isRequired,
+        description: field.description ?? undefined,
+        placeholder: field.placeholder ?? undefined,
+        options: field.options ?? undefined,
+      });
+      setChoicesText(field.options?.choices?.join("\n") ?? "");
+    } else {
+      form.reset(emptyValues);
+      setChoicesText("");
+    }
+  }, [field, form, formId, emptyValues]);
+
+  useEffect(() => {
+    if (open) {
+      resetDialogState();
+    }
+  }, [open, resetDialogState]);
 
   const upsert = useUpsertFormField({
     formId,
@@ -162,12 +179,20 @@ function FieldEditorDialog({
     },
   });
 
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next && !field) {
+      form.reset(emptyValues);
+      setChoicesText("");
+    }
+  };
+
   const needsChoices = ["select", "radio", "multiselect", "checkbox"].includes(
     form.watch("type"),
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {field ? (
           <Button size="sm" variant="outline" className="rounded-full">
@@ -236,6 +261,10 @@ function FieldEditorDialog({
               render={({ field: f }) => (
                 <FormItem>
                   <FormLabel>Answer key</FormLabel>
+                  <FormDescription>
+                    Unique per form — used to store answers, exports, and analytics. Filled
+                    automatically from the label; change only if you need a stable ID.
+                  </FormDescription>
                   <FormControl>
                     <Input className="font-mono" {...f} />
                   </FormControl>
@@ -306,7 +335,11 @@ function FieldEditorDialog({
               name="pageIndex"
               render={({ field: f }) => (
                 <FormItem>
-                  <FormLabel>Section (page)</FormLabel>
+                  <FormLabel>Section</FormLabel>
+                  <FormDescription>
+                    Multi-page forms: questions with the same section number are shown together
+                    on one screen (0 = first page). Single-page forms can leave this at 0.
+                  </FormDescription>
                   <FormControl>
                     <Input
                       type="number"
@@ -315,9 +348,6 @@ function FieldEditorDialog({
                       onChange={(e) => f.onChange(Number(e.target.value) || 0)}
                     />
                   </FormControl>
-                  <p className="text-muted-foreground text-xs">
-                    Use 0 for the first section. Fields with the same number appear on one page.
-                  </p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -441,20 +471,6 @@ export function FormEditor({ formId }: { formId: string }) {
       ? getPublicFormUrl(username, form.slug)
       : null;
 
-  const moveField = (field: EditorField, direction: "up" | "down") => {
-    const sorted = [...fields].sort((a, b) => Number(a.index) - Number(b.index));
-    const idx = sorted.findIndex((f) => f.id === field.id);
-    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= sorted.length) {
-      return;
-    }
-    const other = sorted[swapIdx];
-    if (!other) {
-      return;
-    }
-    reorder.mutate({ formId, fieldId: field.id, index: other.index });
-  };
-
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       {isArchived ? (
@@ -569,14 +585,21 @@ export function FormEditor({ formId }: { formId: string }) {
                 <CardTitle>Questions</CardTitle>
                 <CardDescription>{fields.length} field(s)</CardDescription>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <FieldEditorDialog formId={formId} onSaved={() => void refetch()} />
-                <FieldEditorDialog
-                  formId={formId}
-                  defaultPageIndex={maxPageIndex + 1}
-                  newFieldLabel="Add section"
-                  onSaved={() => void refetch()}
-                />
+              <div className="flex flex-col items-end gap-2 sm:items-stretch">
+                <div className="flex flex-wrap justify-end gap-2">
+                  <FieldEditorDialog formId={formId} onSaved={() => void refetch()} />
+                  <FieldEditorDialog
+                    formId={formId}
+                    defaultPageIndex={maxPageIndex + 1}
+                    newFieldLabel="Add section"
+                    onSaved={() => void refetch()}
+                  />
+                </div>
+                <p className="text-muted-foreground max-w-md text-right text-xs sm:text-left">
+                  <span className="font-medium">Add field</span> — question on the current page.{" "}
+                  <span className="font-medium">Add section</span> — new page; the section number
+                  is set for you.
+                </p>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -585,66 +608,24 @@ export function FormEditor({ formId }: { formId: string }) {
                   Add your first question to start collecting responses.
                 </p>
               ) : (
-                [...fields]
-                  .sort((a, b) => Number(a.index) - Number(b.index))
-                  .map((field, i) => (
-                    <div
-                      key={field.id}
-                      className="flex flex-wrap items-center gap-3 rounded-xl border border-border/80 bg-background/60 p-4"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium">{field.label}</p>
-                        <p className="text-muted-foreground text-xs">
-                          {FIELD_TYPE_LABELS[field.type]} ·{" "}
-                          <span className="font-mono">{field.labelKey}</span>
-                          {field.isRequired ? " · required" : ""}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1">
-                        <Badge variant="outline">#{i + 1}</Badge>
-                        {showSectionLabels ? (
-                          <Badge variant="secondary" className="text-xs">
-                            Section {field.pageIndex + 1}
-                          </Badge>
-                        ) : null}
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          disabled={i === 0}
-                          onClick={() => moveField(field, "up")}
-                        >
-                          <ArrowUp className="size-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          disabled={i === fields.length - 1}
-                          onClick={() => moveField(field, "down")}
-                        >
-                          <ArrowDown className="size-4" />
-                        </Button>
-                        <FieldEditorDialog
-                          formId={formId}
-                          field={field}
-                          onSaved={() => void refetch()}
-                        />
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="text-destructive"
-                          onClick={() => {
-                            if (confirm("Delete this field?")) {
-                              deleteField.mutate({ formId, fieldId: field.id });
-                            }
-                          }}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))
+                <FormFieldList
+                  fields={fields}
+                  showSectionLabels={showSectionLabels}
+                  isReordering={reorder.isPending}
+                  onReorder={(fieldId, index) => reorder.mutate({ formId, fieldId, index })}
+                  onDeleteField={(fieldId) => {
+                    if (confirm("Delete this field?")) {
+                      deleteField.mutate({ formId, fieldId });
+                    }
+                  }}
+                  renderEditControl={(field) => (
+                    <FieldEditorDialog
+                      formId={formId}
+                      field={field}
+                      onSaved={() => void refetch()}
+                    />
+                  )}
+                />
               )}
             </CardContent>
           </Card>

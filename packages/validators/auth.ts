@@ -112,7 +112,8 @@ export const updateEmailNotificationsOutputModel = z.object({
 
 export type UpdateEmailNotificationsOutput = z.infer<typeof updateEmailNotificationsOutputModel>;
 
-export const signOutInputModel = z.undefined();
+/** tRPC mutations with no args still send `{}` over HTTP — do not use `z.undefined()` here */
+export const signOutInputModel = z.object({});
 
 export const signOutOutputModel = z.object({
   success: z.boolean().describe("Whether sign out succeeded"),
