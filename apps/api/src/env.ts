@@ -1,9 +1,15 @@
 import { z } from "zod";
 
+const nodeEnvSchema = z.preprocess(
+  (value) => (value === "production" ? "prod" : value),
+  z.enum(["development", "prod"]).default("development"),
+);
+
 const envSchema = z.object({
   PORT: z.string().optional(),
-  NODE_ENV: z.enum(["development", "prod"]).default("development"),
+  NODE_ENV: nodeEnvSchema,
   BASE_URL: z.string().default("http://localhost:8000"),
+  WEB_APP_URL: z.url().default("http://localhost:3000"),
   RATE_LIMIT_API_WINDOW_MS: z.coerce.number().int().positive().default(900_000),
   RATE_LIMIT_API_MAX: z.coerce.number().int().positive().default(300),
   RATE_LIMIT_AUTH_WINDOW_MS: z.coerce.number().int().positive().default(900_000),

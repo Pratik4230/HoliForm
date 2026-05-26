@@ -16,6 +16,25 @@ const defaultCookieOption: CookieOptions = {
   maxAge: ONE_YEAR,
 };
 
+function isProductionEnv() {
+  const nodeEnv = String(process.env.NODE_ENV ?? "");
+  return nodeEnv === "prod" || nodeEnv === "production";
+}
+
+/** Cross-site cookies for Vercel web + Render/Railway API in production. */
+export function getAuthCookieOptions(): CookieOptions {
+  if (isProductionEnv()) {
+    return {
+      path: "/",
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: ONE_YEAR,
+    };
+  }
+  return defaultCookieOption;
+}
+
 export function createCookieFactory(res: Response) {
   return function createCookie(
     name: string,
@@ -33,7 +52,15 @@ export function getCookieFactory(req: Request) {
 }
 
 export function clearCookieFactory(res: Response) {
-  return function clearCookie(name: string) {
+  return function clearCookie(name: string, opts?: CookieOptions) {
+    if (opts) {
+      res.clearCookie(name, {
+        path: opts.path,
+        secure: opts.secure,
+        sameSite: opts.sameSite,
+      });
+      return;
+    }
     res.clearCookie(name);
   };
 }
@@ -43,7 +70,7 @@ export function clearCookieFactory(res: Response) {
 const AUTHENTICATION_COOKIE_NAME = "authentication-token";
 
 export function setAutheticationCookie(ctx: TRPCContext, accessToken: string) {
-  ctx.createCookie(AUTHENTICATION_COOKIE_NAME, accessToken);
+  ctx.createCookie(AUTHENTICATION_COOKIE_NAME, accessToken, getAuthCookieOptions());
 }
 
 export function getAutheticationCookie(ctx: TRPCContext) {
@@ -51,5 +78,5 @@ export function getAutheticationCookie(ctx: TRPCContext) {
 }
 
 export function clearAutheticationCookie(ctx: TRPCContext) {
-  ctx.clearCookie(AUTHENTICATION_COOKIE_NAME);
+  ctx.clearCookie(AUTHENTICATION_COOKIE_NAME, getAuthCookieOptions());
 }
