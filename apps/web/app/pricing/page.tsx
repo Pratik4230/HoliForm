@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { Check } from "lucide-react";
 import { HoliLoginScene } from "~/components/auth/holi/holi-login-scene";
 import { HOLI } from "~/components/auth/holi/holi-colors";
 import { SiteHeader } from "~/components/layout/site-header";
-import { Button } from "~/components/ui/button";
+import { PricingTierCta } from "~/components/marketing/pricing-tier-cta";
 import {
   Card,
   CardContent,
@@ -52,10 +51,10 @@ export default function PricingPage() {
     <div className="relative min-h-screen bg-background">
       <HoliLoginScene />
       <SiteHeader />
-      <main className="relative z-10 mx-auto max-w-5xl px-4 py-16">
-        <div className="mb-12 text-center">
+      <main className="relative z-10 mx-auto max-w-5xl px-3 py-10 sm:px-4 sm:py-16">
+        <div className="mb-10 text-center sm:mb-12">
           <h1
-            className="text-4xl font-bold tracking-tight md:text-5xl"
+            className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl"
             style={{
               background: `linear-gradient(135deg, ${HOLI.pink}, ${HOLI.orange}, ${HOLI.yellow})`,
               WebkitBackgroundClip: "text",
@@ -128,23 +127,7 @@ export default function PricingPage() {
                 </ul>
               </CardContent>
               <CardFooter className={tier.highlight ? "relative z-10" : ""}>
-                <Button
-                  asChild
-                  className="w-full"
-                  style={
-                    tier.highlight
-                      ? {
-                          border: 0,
-                          color: "white",
-                          background: `linear-gradient(135deg, ${HOLI.pink}, ${HOLI.orange})`,
-                          boxShadow: `0 10px 28px ${HOLI.pink}22`,
-                        }
-                      : undefined
-                  }
-                  variant={tier.highlight ? "default" : "outline"}
-                >
-                  <Link href="/signup">Get started</Link>
-                </Button>
+                <PricingTierCta />
               </CardFooter>
 
               {/* soft glow */}

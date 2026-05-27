@@ -65,13 +65,13 @@ function SortableFieldRow({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex flex-wrap items-center gap-3 rounded-xl border border-border/80 bg-background/60 p-4 shadow-sm ${
+      className={`flex flex-col gap-3 rounded-xl border border-border/80 bg-background/60 p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-center ${
         isDragging ? "ring-2 ring-primary/30" : ""
       }`}
     >
       <button
         type="button"
-        className="text-muted-foreground hover:text-foreground cursor-grab touch-none rounded-md p-1 active:cursor-grabbing"
+        className="text-muted-foreground hover:text-foreground flex size-10 shrink-0 cursor-grab items-center justify-center touch-none rounded-lg border border-border/60 active:cursor-grabbing sm:border-0 sm:p-0"
         aria-label="Drag to reorder"
         {...attributes}
         {...listeners}
@@ -94,12 +94,12 @@ function SortableFieldRow({
           </Badge>
         ) : null}
       </div>
-      <div className="flex gap-1">
+      <div className="flex w-full gap-2 sm:w-auto sm:shrink-0">
         {editControl}
         <Button
           size="icon"
           variant="ghost"
-          className="text-destructive"
+          className="size-10 text-destructive"
           onClick={onDelete}
         >
           <Trash2 className="size-4" />

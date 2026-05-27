@@ -107,14 +107,20 @@ function FormCard({
           }}
           aria-hidden
         />
-        <div className="flex items-start justify-between gap-2 p-4 pb-2">
-          <div className="min-w-0">
-            <p className="truncate font-semibold text-foreground">{form.title}</p>
-            <p className="mt-0.5 font-mono text-xs text-muted-foreground">/{form.slug}</p>
+        <div className="space-y-2 p-3 pb-2 sm:p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 font-semibold leading-snug text-foreground">
+                {form.title}
+              </p>
+              <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
+                /{form.slug}
+              </p>
+            </div>
+            <div className="shrink-0">{statusBadge(form.status, form.visibility, isArchived)}</div>
           </div>
-          {statusBadge(form.status, form.visibility, isArchived)}
         </div>
-        <div className="flex-1 px-4 pb-4">
+        <div className="flex-1 px-3 pb-3 sm:px-4 sm:pb-4">
           <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">
             {form.description || "No description"}
           </p>
@@ -124,27 +130,31 @@ function FormCard({
             </p>
           ) : null}
         </div>
-        <div className="flex flex-wrap items-center gap-2 border-t border-border/60 bg-background/40 px-4 py-3 backdrop-blur-md">
-          <Button asChild size="sm" variant="outline">
+        <div className="flex items-center gap-2 border-t border-border/60 bg-background/40 p-3 backdrop-blur-md sm:px-4">
+          <Button asChild className="h-11 min-h-11 flex-1 touch-manipulation" variant="outline">
             <Link href={`/dashboard/forms/${form.id}`}>
-              <Pencil className="size-3.5" />
-              Edit
+              <Pencil className="size-4 shrink-0" />
+              <span className="truncate">Edit</span>
             </Link>
           </Button>
           {form.status === "published" && username && !isArchived ? (
             <Button
-              size="sm"
-              variant="ghost"
-              className="rounded-full text-xs"
+              className="h-11 min-h-11 flex-1 touch-manipulation text-xs"
+              variant="outline"
               onClick={() => onCopyLink(username, form.slug)}
             >
-              <Copy className="size-3.5" />
-              Copy link
+              <Copy className="size-4 shrink-0" />
+              <span className="truncate">Copy link</span>
             </Button>
           ) : null}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="ghost" className="ml-auto rounded-full">
+              <Button
+                size="icon"
+                variant="outline"
+                className="size-11 shrink-0 touch-manipulation"
+                aria-label="More actions"
+              >
                 <MoreHorizontal className="size-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -226,7 +236,7 @@ export function FormsList() {
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
         {[1, 2, 3].map((i) => (
           <Skeleton key={i} className="h-44 rounded-2xl" />
         ))}
@@ -264,9 +274,9 @@ export function FormsList() {
   const archivedForms = forms.filter((form) => form.archivedAt);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <motion.div
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3"
         variants={listVariants}
         initial="hidden"
         animate="visible"
@@ -284,7 +294,7 @@ export function FormsList() {
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-muted-foreground">Archived</h2>
           <motion.div
-            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3"
             variants={listVariants}
             initial="hidden"
             animate="visible"

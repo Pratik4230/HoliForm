@@ -257,7 +257,7 @@ export function FieldAnalyticsCard({ field }: { field: FieldAnalytics }) {
           <CardTitle className="text-base">{field.label}</CardTitle>
           <CardDescription>Numeric field</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-3 gap-3 text-center text-sm">
+        <CardContent className="grid grid-cols-3 gap-2 text-center text-sm sm:gap-3">
           <div>
             <p className="text-muted-foreground">Min</p>
             <p className="text-lg font-semibold">{field.min ?? "—"}</p>

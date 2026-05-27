@@ -46,9 +46,9 @@ export default function HomePage() {
 
       <div className="relative z-10">
         {/* ── Hero ── */}
-        <section className="mx-auto max-w-4xl px-4 pb-20 pt-16 text-center md:pt-28">
+        <section className="mx-auto max-w-4xl px-4 pb-16 pt-10 text-center sm:pb-20 sm:pt-16 md:pt-28">
           <h1
-            className="text-5xl font-bold tracking-tight md:text-6xl"
+            className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl"
             style={{
               background: `linear-gradient(135deg, ${HOLI.pink}, ${HOLI.orange}, ${HOLI.yellow})`,
               WebkitBackgroundClip: "text",

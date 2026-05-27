@@ -219,7 +219,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       <SidebarInset className="relative min-h-svh bg-background">
         <HoliLoginScene />
-        <header className="relative z-10 flex h-14 items-center gap-2 border-b border-border bg-background/70 px-4 backdrop-blur-md">
+        <header className="relative z-10 flex h-14 items-center gap-2 border-b border-border bg-background/70 px-3 backdrop-blur-md sm:px-4">
           <div
             className="pointer-events-none absolute inset-x-0 top-0 h-full opacity-60"
             style={{
@@ -227,13 +227,18 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             }}
             aria-hidden
           />
-          <SidebarTrigger />
-          <Separator orientation="vertical" className="mx-1 h-6" />
-          <FileText className="size-4 text-muted-foreground" />
-          <span className="text-sm font-semibold">Creator studio</span>
+          <SidebarTrigger className="size-10 shrink-0" />
+          <Separator orientation="vertical" className="mx-1 hidden h-6 sm:block" />
+          <FileText className="hidden size-4 text-muted-foreground sm:block" />
+          <span className="truncate text-sm font-semibold">Creator studio</span>
         </header>
-        <main className={cn("relative z-10 flex-1 p-4 md:p-6")}>
-          <div className="rounded-3xl border border-border/60 bg-background/55 p-4 shadow-sm backdrop-blur-xl md:p-6">
+        <main className={cn("relative z-10 flex-1 px-3 py-4 sm:px-4 sm:py-5 md:px-6 md:py-6")}>
+          <div
+            className={cn(
+              "min-h-0",
+              "sm:rounded-2xl sm:border sm:border-border/60 sm:bg-background/55 sm:p-4 sm:shadow-sm sm:backdrop-blur-xl md:rounded-3xl md:p-6",
+            )}
+          >
             {children}
           </div>
         </main>

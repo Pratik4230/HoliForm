@@ -52,12 +52,18 @@ export function VerifyEmailForm() {
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       className="w-full max-w-md"
     >
-      <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-8">
         <div className="mb-6 space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">Verify your email</h1>
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Verify your email</h1>
           <p className="text-sm text-muted-foreground">
-            We sent a 6-digit code{email ? ` to ${email}` : ""}. Enter it below to finish signing
-            up.
+            We sent a 6-digit code
+            {email ? (
+              <>
+                {" "}
+                to <span className="break-all font-medium text-foreground">{email}</span>
+              </>
+            ) : null}
+            . Enter it below to finish signing up.
           </p>
         </div>
 

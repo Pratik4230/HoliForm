@@ -79,8 +79,12 @@ function FieldInput({
         return (
           <div className="flex flex-col gap-2">
             {choices.map((choice) => (
-              <label key={choice} className="flex items-center gap-2 text-sm">
+              <label
+                key={choice}
+                className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-1 py-2 text-sm active:bg-muted/40"
+              >
                 <Checkbox
+                  className="size-5"
                   checked={selected.includes(choice)}
                   onCheckedChange={(checked) => {
                     if (checked) {
@@ -97,8 +101,9 @@ function FieldInput({
         );
       }
       return (
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-1 py-2 text-sm active:bg-muted/40">
           <Checkbox
+            className="size-5"
             checked={Boolean(value)}
             onCheckedChange={(checked) => onChange(Boolean(checked))}
           />
@@ -113,8 +118,15 @@ function FieldInput({
           className="flex flex-col gap-2"
         >
           {choices.map((choice) => (
-            <label key={choice} className="flex items-center gap-2 text-sm">
-              <RadioGroupItem value={choice} id={`${field.labelKey}-${choice}`} />
+            <label
+              key={choice}
+              className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-1 py-2 text-sm active:bg-muted/40"
+            >
+              <RadioGroupItem
+                className="size-5"
+                value={choice}
+                id={`${field.labelKey}-${choice}`}
+              />
               {choice}
             </label>
           ))}
@@ -140,8 +152,12 @@ function FieldInput({
       return (
         <div className="flex flex-col gap-2">
           {choices.map((choice) => (
-            <label key={choice} className="flex items-center gap-2 text-sm">
+            <label
+              key={choice}
+              className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-1 py-2 text-sm active:bg-muted/40"
+            >
               <Checkbox
+                className="size-5"
                 checked={selected.includes(choice)}
                 onCheckedChange={(checked) => {
                   if (checked) {

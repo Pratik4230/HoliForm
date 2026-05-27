@@ -37,7 +37,7 @@ export function LoginForm() {
       className="w-full max-w-md"
     >
       <div
-        className="relative overflow-hidden rounded-3xl border-2 p-8 shadow-xl backdrop-blur-md"
+        className="relative overflow-hidden rounded-3xl border-2 p-4 shadow-xl backdrop-blur-md sm:p-8"
         style={{
           borderColor: `${HOLI.pink}44`,
           background: "rgba(255, 255, 255, 0.88)",

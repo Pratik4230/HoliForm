@@ -177,25 +177,25 @@ export function FormResponses({ formId }: { formId: string }) {
   const isInitialListLoading = listLoading && !listData;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-1">
-          <Button variant="ghost" size="sm" className="-ml-2" asChild>
+    <div className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <Button variant="ghost" size="sm" className="-ml-2 h-10" asChild>
             <Link href={`/dashboard/forms/${formId}`}>
               <ArrowLeft className="size-4" />
               Back to editor
             </Link>
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight">{form.title}</h1>
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{form.title}</h1>
           <p className="text-muted-foreground text-sm">Responses & analytics</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           <Badge variant="secondary" className="text-sm">
             {analytics?.totalResponses ?? 0} total
           </Badge>
           <Button
             variant="outline"
-            size="sm"
+            className="h-10"
             disabled={isExporting || (analytics?.totalResponses ?? 0) === 0}
             onClick={() => void exportCsv(formId)}
           >
@@ -224,8 +224,7 @@ export function FormResponses({ formId }: { formId: string }) {
             <Button
               type="button"
               variant="outline"
-              size="sm"
-              className="shrink-0 gap-1.5"
+              className="h-10 shrink-0 gap-1.5"
               aria-expanded={overviewOpen}
               aria-label={overviewOpen ? "Minimize overview" : "Expand overview"}
             >
@@ -342,13 +341,43 @@ export function FormResponses({ formId }: { formId: string }) {
           </Empty>
         ) : (
           <>
-            <div className="rounded-xl border border-border">
+            <div className="space-y-3 md:hidden">
+              {listData.items.map((item) => (
+                <div
+                  key={item.id}
+                  className="space-y-3 rounded-xl border border-border bg-card p-4"
+                >
+                  <p className="text-sm text-muted-foreground">
+                    {formatDistanceToNow(new Date(item.submittedAt), { addSuffix: true })}
+                  </p>
+                  {previewFields.slice(0, 3).map((field) => (
+                    <div key={field.id} className="min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground">{field.label}</p>
+                      <p className="mt-0.5 break-words text-sm">
+                        {formatAnswerValue(item.preview[field.labelKey])}
+                      </p>
+                    </div>
+                  ))}
+                  <Button
+                    className="h-10 w-full"
+                    variant="outline"
+                    onClick={() => setSelectedResponseId(item.id)}
+                  >
+                    View details
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden rounded-xl border border-border md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Submitted</TableHead>
                     {previewFields.slice(0, 3).map((field) => (
-                      <TableHead key={field.id}>{field.label}</TableHead>
+                      <TableHead key={field.id} className="max-w-[180px]">
+                        <span className="line-clamp-2">{field.label}</span>
+                      </TableHead>
                     ))}
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -356,7 +385,7 @@ export function FormResponses({ formId }: { formId: string }) {
                 <TableBody>
                   {listData.items.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="whitespace-nowrap text-muted-foreground">
+                      <TableCell className="text-muted-foreground">
                         {formatDistanceToNow(new Date(item.submittedAt), {
                           addSuffix: true,
                         })}
@@ -368,7 +397,7 @@ export function FormResponses({ formId }: { formId: string }) {
                       ))}
                       <TableCell className="text-right">
                         <Button
-                          size="sm"
+                          className="h-9"
                           variant="outline"
                           onClick={() => setSelectedResponseId(item.id)}
                         >
@@ -382,15 +411,15 @@ export function FormResponses({ formId }: { formId: string }) {
             </div>
 
             {totalPages > 1 || listData.total > 0 ? (
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-center text-sm text-muted-foreground sm:text-left">
                   Page {listData.page} of {Math.max(totalPages, 1)} ({listData.total} matching
                   response{listData.total === 1 ? "" : "s"})
                 </p>
                 <div className="flex gap-2">
                   <Button
+                    className="h-10 flex-1 sm:flex-none"
                     variant="outline"
-                    size="sm"
                     disabled={page <= 1}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                   >
@@ -398,8 +427,8 @@ export function FormResponses({ formId }: { formId: string }) {
                     Previous
                   </Button>
                   <Button
+                    className="h-10 flex-1 sm:flex-none"
                     variant="outline"
-                    size="sm"
                     disabled={page >= totalPages}
                     onClick={() => setPage((p) => p + 1)}
                   >

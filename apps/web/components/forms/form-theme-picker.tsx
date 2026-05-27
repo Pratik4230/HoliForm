@@ -53,7 +53,7 @@ export function FormThemePicker({ value, onChange, disabled }: FormThemePickerPr
                   disabled={disabled}
                   onClick={() => onChange(theme.id)}
                   className={cn(
-                    "rounded-xl border p-3 text-left transition-shadow hover:shadow-md",
+                    "min-h-20 rounded-xl border p-4 text-left transition-shadow hover:shadow-md active:scale-[0.98]",
                     selected ? "border-foreground ring-2 ring-foreground/20" : "border-border",
                   )}
                 >

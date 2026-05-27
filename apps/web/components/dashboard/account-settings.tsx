@@ -42,12 +42,12 @@ export function AccountSettings() {
     <Card>
       <CardHeader>
         <CardTitle>Email notifications</CardTitle>
-        <CardDescription>
+        <CardDescription className="break-words">
           When enabled, we email you at {session.data?.email} whenever someone submits one of your
           forms. Respondent thank-you emails are not affected.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex items-center justify-between gap-4">
+      <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Label htmlFor="email-notifications" className="flex flex-col gap-1">
           <span className="font-medium">New response alerts</span>
           <span className="text-sm font-normal text-muted-foreground">
@@ -56,6 +56,7 @@ export function AccountSettings() {
         </Label>
         <Switch
           id="email-notifications"
+          className="shrink-0 self-start sm:self-center"
           checked={enabled}
           disabled={updateNotifications.isPending}
           onCheckedChange={handleToggle}

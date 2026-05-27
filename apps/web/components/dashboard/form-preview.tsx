@@ -111,21 +111,26 @@ export function FormPreview({ formId }: { formId: string }) {
     <div className="relative min-h-svh">
       <HoliLoginScene />
       <div className="sticky top-0 z-50 border-b border-border bg-background/70 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
-          <Button asChild variant="ghost" size="sm">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
+          <Button asChild variant="ghost" className="h-10 shrink-0 px-2 sm:px-3">
             <Link href={`/dashboard/forms/${formId}`}>
               <ArrowLeft className="size-4" />
-              Back to editor
+              <span className="hidden sm:inline">Back to editor</span>
+              <span className="sm:hidden">Back</span>
             </Link>
           </Button>
-          <Badge variant="secondary">Preview mode</Badge>
-          <p className="hidden text-sm text-muted-foreground sm:block">Responses are not saved</p>
+          <Badge variant="secondary" className="shrink-0">
+            Preview
+          </Badge>
+          <p className="w-full text-center text-xs text-muted-foreground sm:w-auto sm:text-left sm:text-sm">
+            Responses are not saved
+          </p>
         </div>
       </div>
 
       <div className="relative z-10">
-        <div className="mx-auto max-w-5xl px-4 py-8">
-          <div className="rounded-3xl border border-border/60 bg-background/55 p-4 shadow-sm backdrop-blur-xl md:p-6">
+        <div className="mx-auto max-w-2xl px-3 py-4 sm:px-4 sm:py-8">
+          <div className="rounded-2xl border border-border/60 bg-background/55 p-2 shadow-sm backdrop-blur-xl sm:rounded-3xl sm:p-4 md:p-6">
             <FormFillExperience
               key={previewKey}
               form={form}

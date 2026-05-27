@@ -477,7 +477,7 @@ export function FormEditor({ formId }: { formId: string }) {
     form.status === "published" && username ? getPublicFormUrl(username, form.slug) : null;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-4 sm:space-y-6">
       {isArchived ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900 dark:bg-amber-950/40">
           <p className="font-medium text-amber-900 dark:text-amber-100">
@@ -494,13 +494,13 @@ export function FormEditor({ formId }: { formId: string }) {
           </Button>
         </div>
       ) : null}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{form.title}</h1>
-          <p className="text-muted-foreground font-mono text-sm">/{form.slug}</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{form.title}</h1>
+          <p className="text-muted-foreground truncate font-mono text-sm">/{form.slug}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="rounded-full" asChild>
+        <div className="-mx-1 flex max-w-full gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:pb-0">
+          <Button variant="outline" className="shrink-0 rounded-full" asChild>
             <Link href={`/dashboard/forms/${formId}/responses`}>
               <BarChart3 className="size-4" />
               Responses
@@ -510,19 +510,21 @@ export function FormEditor({ formId }: { formId: string }) {
             form.status === "published" ? (
               <Button
                 variant="outline"
-                className="rounded-full"
+                className="shrink-0 rounded-full"
                 onClick={() => unpublish.mutate({ formId })}
               >
                 Unpublish
               </Button>
             ) : (
-              <Button onClick={() => publish.mutate({ formId })}>Publish</Button>
+              <Button className="shrink-0" onClick={() => publish.mutate({ formId })}>
+                Publish
+              </Button>
             )
           ) : null}
           {!isArchived ? (
             <Button
               variant="outline"
-              className="rounded-full"
+              className="shrink-0 rounded-full"
               disabled={archiveForm.isPending}
               onClick={() => {
                 if (confirm(`Archive "${form.title}"? It will be unpublished and hidden.`)) {
@@ -534,7 +536,7 @@ export function FormEditor({ formId }: { formId: string }) {
               Archive
             </Button>
           ) : null}
-          <Button variant="outline" className="rounded-full" asChild>
+          <Button variant="outline" className="shrink-0 rounded-full" asChild>
             <Link href={`/preview/${formId}`}>
               <Eye className="size-4" />
               Preview
@@ -542,7 +544,7 @@ export function FormEditor({ formId }: { formId: string }) {
           </Button>
           <Button
             variant="outline"
-            className="rounded-full"
+            className="shrink-0 rounded-full"
             disabled={cloneForm.isPending}
             onClick={() => cloneForm.mutate({ formId })}
           >
@@ -551,7 +553,7 @@ export function FormEditor({ formId }: { formId: string }) {
           </Button>
           {shareUrl ? (
             <>
-              <Button variant="outline" className="rounded-full" asChild>
+              <Button variant="outline" className="shrink-0 rounded-full" asChild>
                 <a href={shareUrl} target="_blank" rel="noreferrer">
                   <ExternalLink className="size-4" />
                   Open live
@@ -559,7 +561,7 @@ export function FormEditor({ formId }: { formId: string }) {
               </Button>
               <Button
                 variant="secondary"
-                className="rounded-full"
+                className="shrink-0 rounded-full"
                 onClick={() => {
                   void navigator.clipboard.writeText(shareUrl);
                   toast.success("Link copied");
@@ -574,24 +576,24 @@ export function FormEditor({ formId }: { formId: string }) {
       </div>
 
       <Tabs defaultValue="fields" className="space-y-4">
-        <TabsList className="bg-background/80 h-11 rounded-full p-1">
-          <TabsTrigger value="fields" className="rounded-full px-6">
+        <TabsList className="bg-background/80 h-11 w-full max-w-full justify-start overflow-x-auto rounded-full p-1">
+          <TabsTrigger value="fields" className="shrink-0 rounded-full px-4 sm:px-6">
             Fields
           </TabsTrigger>
-          <TabsTrigger value="settings" className="rounded-full px-6">
+          <TabsTrigger value="settings" className="shrink-0 rounded-full px-4 sm:px-6">
             Settings
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="fields" className="space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <CardTitle>Questions</CardTitle>
                 <CardDescription>{fields.length} field(s)</CardDescription>
               </div>
-              <div className="flex flex-col items-end gap-2 sm:items-stretch">
-                <div className="flex flex-wrap justify-end gap-2">
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+                <div className="flex flex-wrap gap-2 sm:justify-end">
                   <FieldEditorDialog formId={formId} onSaved={() => void refetch()} />
                   <FieldEditorDialog
                     formId={formId}
@@ -600,7 +602,7 @@ export function FormEditor({ formId }: { formId: string }) {
                     onSaved={() => void refetch()}
                   />
                 </div>
-                <p className="text-muted-foreground max-w-md text-right text-xs sm:text-left">
+                <p className="text-muted-foreground text-xs sm:max-w-md sm:text-right">
                   <span className="font-medium">Add field</span> — question on the current page.{" "}
                   <span className="font-medium">Add section</span> — new page; the section number is
                   set for you.
@@ -787,8 +789,8 @@ export function FormEditor({ formId }: { formId: string }) {
               <Separator />
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div>
+                <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
                     <p className="font-medium">Visibility</p>
                     <p className="text-muted-foreground text-sm">
                       Public forms can appear in explore later; unlisted is link-only.
@@ -800,7 +802,7 @@ export function FormEditor({ formId }: { formId: string }) {
                       setVisibility.mutate({ formId, visibility })
                     }
                   >
-                    <SelectTrigger className="w-36">
+                    <SelectTrigger className="w-full sm:w-36">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -810,14 +812,15 @@ export function FormEditor({ formId }: { formId: string }) {
                   </Select>
                 </div>
 
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div>
+                <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
                     <p className="font-medium">Accepting responses</p>
                     <p className="text-muted-foreground text-sm">
                       Turn off to close the form without unpublishing.
                     </p>
                   </div>
                   <Switch
+                    className="shrink-0 self-start sm:self-center"
                     checked={form.closedAt === null}
                     onCheckedChange={(checked) =>
                       setAccepting.mutate({ formId, acceptingResponses: checked })

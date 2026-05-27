@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { ExploreForms } from "~/components/forms/explore-forms";
 import { HoliLoginScene } from "~/components/auth/holi/holi-login-scene";
 import { HOLI } from "~/components/auth/holi/holi-colors";
 import { SiteHeader } from "~/components/layout/site-header";
-import { Button } from "~/components/ui/button";
+import { MarketingAuthCta } from "~/components/marketing/marketing-auth-cta";
 
 export default function ExplorePage() {
   return (
@@ -31,14 +30,11 @@ export default function ExplorePage() {
         <div className="rounded-2xl border border-border bg-background/70 p-2 backdrop-blur-md">
           <ExploreForms />
         </div>
-        <div className="mt-12 text-center">
-          <Button
-            asChild
-            className="border-0 font-semibold text-white shadow-md transition-transform hover:scale-[1.02] active:scale-[0.98]"
-            style={{ background: `linear-gradient(135deg, ${HOLI.orange}, ${HOLI.pink})` }}
-          >
-            <Link href="/signup">Create your own form</Link>
-          </Button>
+        <div className="mt-12 flex justify-center px-2">
+          <MarketingAuthCta
+            signedOutLabel="Create your own form"
+            signedInLabel="Go to dashboard"
+          />
         </div>
       </main>
     </div>
