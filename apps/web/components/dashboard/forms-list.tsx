@@ -15,7 +15,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { HOLI } from "~/components/auth/holi/holi-colors";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -69,7 +70,7 @@ function statusBadge(
     );
   }
   return (
-    <Badge variant="outline" className="text-xs font-semibold text-green-600">
+    <Badge variant="outline" className="text-xs font-semibold" style={{ color: HOLI.green }}>
       <Globe className="mr-1 size-3" />
       Published
     </Badge>
@@ -95,7 +96,17 @@ function FormCard({
 
   return (
     <motion.div variants={cardVariants}>
-      <div className="group flex h-full flex-col rounded-xl border border-border bg-card transition-shadow hover:shadow-md">
+      <div
+        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-background/60 shadow-sm backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:shadow-md"
+        style={{ boxShadow: `0 12px 34px ${HOLI.yellow}10` }}
+      >
+        <div
+          className="pointer-events-none h-1 w-full opacity-70"
+          style={{
+            background: `linear-gradient(90deg, ${HOLI.pink}aa, ${HOLI.yellow}aa, ${HOLI.green}aa, ${HOLI.orange}aa)`,
+          }}
+          aria-hidden
+        />
         <div className="flex items-start justify-between gap-2 p-4 pb-2">
           <div className="min-w-0">
             <p className="truncate font-semibold text-foreground">{form.title}</p>
@@ -113,7 +124,7 @@ function FormCard({
             </p>
           ) : null}
         </div>
-        <div className="flex flex-wrap items-center gap-2 border-t border-border/60 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2 border-t border-border/60 bg-background/40 px-4 py-3 backdrop-blur-md">
           <Button asChild size="sm" variant="outline">
             <Link href={`/dashboard/forms/${form.id}`}>
               <Pencil className="size-3.5" />
@@ -217,7 +228,7 @@ export function FormsList() {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-44 rounded-xl" />
+          <Skeleton key={i} className="h-44 rounded-2xl" />
         ))}
       </div>
     );
@@ -225,13 +236,17 @@ export function FormsList() {
 
   if (!forms?.length) {
     return (
-      <Empty className="rounded-xl border border-dashed border-border py-16">
+      <Empty className="rounded-2xl border border-dashed border-border bg-background/60 py-16 backdrop-blur-md">
         <div className="mx-auto max-w-sm text-center">
           <p className="text-xl font-bold text-foreground">No forms yet</p>
           <p className="mt-2 text-sm text-muted-foreground">
             Create your first form and start collecting responses.
           </p>
-          <Button asChild className="mt-6">
+          <Button
+            asChild
+            className="mt-6 border-0 font-semibold text-white shadow-md"
+            style={{ background: `linear-gradient(135deg, ${HOLI.orange}, ${HOLI.pink})` }}
+          >
             <Link href="/dashboard/forms/new">Create your first form</Link>
           </Button>
         </div>

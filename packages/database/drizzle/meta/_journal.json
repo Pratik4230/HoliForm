@@ -15,6 +15,13 @@
       "when": 1779714000000,
       "tag": "0001_form_theme_presets",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779720000000,
+      "tag": "0002_refresh_form_theme_presets",
+      "breakpoints": true
     }
   ]
 }

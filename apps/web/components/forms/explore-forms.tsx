@@ -12,7 +12,7 @@ export function ExploreForms() {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 9 }).map((_, index) => (
-          <Skeleton key={index} className="h-52 rounded-xl" />
+          <Skeleton key={index} className="h-52 rounded-2xl" />
         ))}
       </div>
     );
@@ -20,7 +20,7 @@ export function ExploreForms() {
 
   if (!forms?.length) {
     return (
-      <Empty className="rounded-xl border border-dashed border-border py-16">
+      <Empty className="rounded-2xl border border-dashed border-border bg-background/60 py-16 backdrop-blur-md">
         <div className="mx-auto max-w-md text-center">
           <p className="text-lg font-semibold">No public forms yet</p>
           <p className="mt-2 text-sm text-muted-foreground">

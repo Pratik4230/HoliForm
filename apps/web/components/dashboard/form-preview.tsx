@@ -5,6 +5,8 @@ import { useState } from "react";
 import { ArrowLeft, RotateCcw } from "lucide-react";
 import { FormFillExperience } from "~/components/forms/form-fill-experience";
 import { HoliConfetti } from "~/components/forms/holi-confetti";
+import { HoliLoginScene } from "~/components/auth/holi/holi-login-scene";
+import { HOLI } from "~/components/auth/holi/holi-colors";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
@@ -24,10 +26,18 @@ function PreviewThankYou({
 }) {
   return (
     <div className="relative min-h-svh px-4 py-16">
+      <HoliLoginScene />
       <HoliConfetti />
-      <Card className="relative z-10 mx-auto max-w-lg border-0 text-center shadow-xl">
+      <Card className="relative z-10 mx-auto max-w-lg overflow-hidden rounded-3xl border border-border/70 bg-background/70 text-center shadow-xl backdrop-blur-xl">
+        <div
+          className="pointer-events-none h-1 w-full opacity-70"
+          style={{
+            background: `linear-gradient(90deg, ${HOLI.pink}cc, ${HOLI.yellow}cc, ${HOLI.green}cc, ${HOLI.orange}cc)`,
+          }}
+          aria-hidden
+        />
         <CardHeader className="space-y-4 pb-8">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 via-yellow-400 to-cyan-400 text-3xl">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-linear-to-br from-pink-500 via-yellow-400 to-cyan-400 text-3xl">
             ✓
           </div>
           <CardTitle className="text-2xl">Preview complete</CardTitle>
@@ -98,8 +108,9 @@ export function FormPreview({ formId }: { formId: string }) {
   }
 
   return (
-    <div className="min-h-svh">
-      <div className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
+    <div className="relative min-h-svh">
+      <HoliLoginScene />
+      <div className="sticky top-0 z-50 border-b border-border bg-background/70 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
           <Button asChild variant="ghost" size="sm">
             <Link href={`/dashboard/forms/${formId}`}>
@@ -108,22 +119,26 @@ export function FormPreview({ formId }: { formId: string }) {
             </Link>
           </Button>
           <Badge variant="secondary">Preview mode</Badge>
-          <p className="hidden text-sm text-muted-foreground sm:block">
-            Responses are not saved
-          </p>
+          <p className="hidden text-sm text-muted-foreground sm:block">Responses are not saved</p>
         </div>
       </div>
 
-      <FormFillExperience
-        key={previewKey}
-        form={form}
-        fields={sortedFields}
-        theme={theme}
-        mode="preview"
-        onSubmit={async () => {
-          setCompleted(true);
-        }}
-      />
+      <div className="relative z-10">
+        <div className="mx-auto max-w-5xl px-4 py-8">
+          <div className="rounded-3xl border border-border/60 bg-background/55 p-4 shadow-sm backdrop-blur-xl md:p-6">
+            <FormFillExperience
+              key={previewKey}
+              form={form}
+              fields={sortedFields}
+              theme={theme}
+              mode="preview"
+              onSubmit={async () => {
+                setCompleted(true);
+              }}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

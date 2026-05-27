@@ -14,13 +14,7 @@ import {
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -28,11 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "~/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Empty } from "~/components/ui/empty";
 import { Separator } from "~/components/ui/separator";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -61,6 +51,7 @@ import {
   type ResponseFiltersState,
 } from "~/components/dashboard/response-filters";
 import { formatAnswerValue } from "~/lib/format-answer";
+import { HOLI } from "~/components/auth/holi/holi-colors";
 
 const PAGE_SIZE = 15;
 
@@ -79,9 +70,25 @@ function ResponseDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
+      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto rounded-2xl border-border/70 bg-background/70 shadow-xl backdrop-blur-xl">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-1 opacity-70"
+          style={{
+            background: `linear-gradient(90deg, ${HOLI.pink}cc, ${HOLI.yellow}cc, ${HOLI.orange}cc)`,
+          }}
+          aria-hidden
+        />
         <DialogHeader>
-          <DialogTitle>Response details</DialogTitle>
+          <DialogTitle
+            style={{
+              background: `linear-gradient(135deg, ${HOLI.pink}, ${HOLI.orange}, ${HOLI.yellow})`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Response details
+          </DialogTitle>
           <DialogDescription>
             {data?.response.submittedAt
               ? `Submitted ${formatDistanceToNow(new Date(data.response.submittedAt), { addSuffix: true })}`
@@ -100,7 +107,7 @@ function ResponseDetailDialog({
               data.answers.map((answer) => (
                 <div key={answer.fieldId} className="space-y-1">
                   <p className="text-sm font-medium">{answer.label}</p>
-                  <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
+                  <p className="rounded-xl border border-border/70 bg-background/60 px-3 py-2 text-sm backdrop-blur-md">
                     {formatAnswerValue(answer.value)}
                   </p>
                 </div>
@@ -163,9 +170,7 @@ export function FormResponses({ formId }: { formId: string }) {
   }
 
   const form = formData.form;
-  const previewFields = [...formData.fields].sort(
-    (a, b) => Number(a.index) - Number(b.index),
-  );
+  const previewFields = [...formData.fields].sort((a, b) => Number(a.index) - Number(b.index));
   const totalPages = listData?.totalPages ?? 0;
   const filtersActive = hasActiveResponseFilters(filters);
   const hasAnyResponses = (analytics?.totalResponses ?? 0) > 0;
@@ -194,11 +199,7 @@ export function FormResponses({ formId }: { formId: string }) {
             disabled={isExporting || (analytics?.totalResponses ?? 0) === 0}
             onClick={() => void exportCsv(formId)}
           >
-            {isExporting ? (
-              <Spinner className="size-4" />
-            ) : (
-              <Download className="size-4" />
-            )}
+            {isExporting ? <Spinner className="size-4" /> : <Download className="size-4" />}
             Export CSV
           </Button>
         </div>

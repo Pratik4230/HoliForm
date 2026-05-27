@@ -1,3 +1,33 @@
+-- Remap forms on removed preset ids, then drop legacy presets.
+UPDATE "forms"
+SET "theme_id" = 'holi-gulal'
+WHERE "theme_id" IS NOT NULL
+  AND "theme_id" NOT IN (
+    'holi-gulal',
+    'holi-saffron',
+    'holi-mehendi',
+    'holi-rangoli',
+    'holi-pani',
+    'holi-baingani',
+    'minimal-white',
+    'minimal-slate',
+    'minimal-ink'
+  );
+
+DELETE FROM "form_themes"
+WHERE "is_preset" = true
+  AND "id" NOT IN (
+    'holi-gulal',
+    'holi-saffron',
+    'holi-mehendi',
+    'holi-rangoli',
+    'holi-pani',
+    'holi-baingani',
+    'minimal-white',
+    'minimal-slate',
+    'minimal-ink'
+  );
+
 INSERT INTO "form_themes" ("id", "name", "category", "config", "is_preset") VALUES
   ('holi-gulal', 'Gulal Bloom', 'Holi', '{"primaryColor":"#e91e63","backgroundColor":"#fff8e7","textColor":"#1f2937","accentColor":"#ff9800"}', true),
   ('holi-saffron', 'Saffron Sky', 'Holi', '{"primaryColor":"#ff5722","backgroundColor":"#fffde7","textColor":"#3e2723","accentColor":"#ffc107"}', true),

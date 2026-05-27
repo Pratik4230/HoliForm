@@ -6,10 +6,7 @@ import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
-import {
-  verifyEmailWithOtpInputModel,
-  type VerifyEmailWithOtpInput,
-} from "@repo/validators/auth";
+import { verifyEmailWithOtpInputModel, type VerifyEmailWithOtpInput } from "@repo/validators/auth";
 import { useResendVerificationOtp, useVerifyEmail } from "~/hooks/api/auth";
 import { Button } from "~/components/ui/button";
 import {
@@ -79,7 +76,7 @@ export function VerifyEmailForm() {
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="you@example.com"
+                        placeholder="Email address"
                         {...field}
                         onChange={(event) => {
                           field.onChange(event);

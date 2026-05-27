@@ -23,13 +23,7 @@ import {
   type UpsertFormFieldInput,
 } from "@repo/validators/forms";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +57,7 @@ import { Switch } from "~/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Textarea } from "~/components/ui/textarea";
 import { Spinner } from "~/components/ui/spinner";
+import { HOLI } from "~/components/auth/holi/holi-colors";
 import { getPublicFormUrl } from "~/lib/form-url";
 import { useSession } from "~/hooks/api/auth";
 import {
@@ -187,9 +182,7 @@ function FieldEditorDialog({
     }
   };
 
-  const needsChoices = ["select", "radio", "multiselect", "checkbox"].includes(
-    form.watch("type"),
-  );
+  const needsChoices = ["select", "radio", "multiselect", "checkbox"].includes(form.watch("type"));
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -205,9 +198,25 @@ function FieldEditorDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{field ? "Edit field" : "New field"}</DialogTitle>
+      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl border-border/70 bg-background/70 shadow-xl backdrop-blur-xl sm:max-w-lg">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-1 opacity-70"
+          style={{
+            background: `linear-gradient(90deg, ${HOLI.pink}cc, ${HOLI.yellow}cc, ${HOLI.green}cc, ${HOLI.orange}cc)`,
+          }}
+          aria-hidden
+        />
+        <DialogHeader className="pt-2">
+          <DialogTitle
+            style={{
+              background: `linear-gradient(135deg, ${HOLI.pink}, ${HOLI.orange}, ${HOLI.yellow})`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            {field ? "Edit field" : "New field"}
+          </DialogTitle>
           <DialogDescription className="sr-only">
             {field
               ? "Update the label, type, and options for this form field."
@@ -226,10 +235,7 @@ function FieldEditorDialog({
                 upsertFormFieldInputModel.parse({
                   ...values,
                   isRequired: values.isRequired ?? false,
-                  options:
-                    needsChoices && choices.length > 0
-                      ? { choices }
-                      : values.options,
+                  options: needsChoices && choices.length > 0 ? { choices } : values.options,
                 }),
               );
             })}
@@ -262,7 +268,7 @@ function FieldEditorDialog({
                 <FormItem>
                   <FormLabel>Answer key</FormLabel>
                   <FormDescription>
-                    Unique per form — used to store answers, exports, and analytics. Filled
+                    Unique per form used to store answers, exports, and analytics. Filled
                     automatically from the label; change only if you need a stable ID.
                   </FormDescription>
                   <FormControl>
@@ -337,8 +343,8 @@ function FieldEditorDialog({
                 <FormItem>
                   <FormLabel>Section</FormLabel>
                   <FormDescription>
-                    Multi-page forms: questions with the same section number are shown together
-                    on one screen (0 = first page). Single-page forms can leave this at 0.
+                    Multi-page forms: questions with the same section number are shown together on
+                    one screen (0 = first page). Single-page forms can leave this at 0.
                   </FormDescription>
                   <FormControl>
                     <Input
@@ -370,7 +376,7 @@ function FieldEditorDialog({
               control={form.control}
               name="isRequired"
               render={({ field: f }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                <FormItem className="flex items-center justify-between rounded-xl border border-border/70 bg-background/60 p-3 backdrop-blur-md">
                   <FormLabel>Required</FormLabel>
                   <FormControl>
                     <Switch checked={f.value} onCheckedChange={f.onChange} />
@@ -379,7 +385,12 @@ function FieldEditorDialog({
               )}
             />
             <DialogFooter>
-              <Button type="submit" disabled={upsert.isPending}>
+              <Button
+                type="submit"
+                className="border-0 font-semibold text-white shadow-md"
+                style={{ background: `linear-gradient(135deg, ${HOLI.pink}, ${HOLI.orange})` }}
+                disabled={upsert.isPending}
+              >
                 Save field
               </Button>
             </DialogFooter>
@@ -431,13 +442,9 @@ export function FormEditor({ formId }: { formId: string }) {
       thankYouMessage: data.form.thankYouMessage ?? "",
     });
     setExpiresAtLocal(
-      data.form.expiresAt
-        ? new Date(data.form.expiresAt).toISOString().slice(0, 16)
-        : "",
+      data.form.expiresAt ? new Date(data.form.expiresAt).toISOString().slice(0, 16) : "",
     );
-    setMaxResponsesInput(
-      data.form.maxResponses != null ? String(data.form.maxResponses) : "",
-    );
+    setMaxResponsesInput(data.form.maxResponses != null ? String(data.form.maxResponses) : "");
     setNewPassword("");
     setClearPassword(false);
   }, [data, formId, settingsForm]);
@@ -467,9 +474,7 @@ export function FormEditor({ formId }: { formId: string }) {
   const showSectionLabels = formHasMultipleSections(fields);
   const username = session.data?.username ?? "";
   const shareUrl =
-    form.status === "published" && username
-      ? getPublicFormUrl(username, form.slug)
-      : null;
+    form.status === "published" && username ? getPublicFormUrl(username, form.slug) : null;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -597,8 +602,8 @@ export function FormEditor({ formId }: { formId: string }) {
                 </div>
                 <p className="text-muted-foreground max-w-md text-right text-xs sm:text-left">
                   <span className="font-medium">Add field</span> — question on the current page.{" "}
-                  <span className="font-medium">Add section</span> — new page; the section number
-                  is set for you.
+                  <span className="font-medium">Add section</span> — new page; the section number is
+                  set for you.
                 </p>
               </div>
             </CardHeader>
@@ -757,9 +762,7 @@ export function FormEditor({ formId }: { formId: string }) {
                       </label>
                     ) : null}
                   </div>
-                  <Button type="submit">
-                    Save settings
-                  </Button>
+                  <Button type="submit">Save settings</Button>
                 </form>
               </Form>
 
