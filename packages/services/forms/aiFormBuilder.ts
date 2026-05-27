@@ -265,12 +265,14 @@ async function applyFormSpec(
   const created = await formDomain.createForm(userId, {
     title: parsed.title,
     description: parsed.description ?? "",
+    slug: undefined,
     themeId: parsed.themeId ?? DEFAULT_FORM_THEME_ID,
   });
 
   if (parsed.thankYouMessage) {
     await formDomain.updateForm(userId, {
       formId: created.id,
+      slug: undefined,
       thankYouMessage: parsed.thankYouMessage,
     });
   }
