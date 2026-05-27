@@ -2,10 +2,20 @@ import { z } from "zod";
 
 import { formFieldOutputModel } from "./formField";
 
+/** Treat blank slug inputs as omitted so optional slug fields validate in forms. */
+export const optionalFormSlugModel = z
+  .string()
+  .max(128)
+  .optional()
+  .transform((value) => {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : undefined;
+  });
+
 export const createFormInputModel = z.object({
   title: z.string().min(1).max(255).describe("Form title"),
   description: z.string().max(10000).optional().default("").describe("Form description"),
-  slug: z.string().min(1).max(128).optional().describe("URL slug unique per creator"),
+  slug: optionalFormSlugModel.describe("URL slug unique per creator"),
   themeId: z.string().max(64).optional().describe("Preset theme id"),
 });
 
@@ -59,7 +69,7 @@ export const updateFormInputModel = z.object({
   formId: z.uuid().describe("Form id"),
   title: z.string().min(1).max(255).optional().describe("Form title"),
   description: z.string().max(10000).optional().describe("Form description"),
-  slug: z.string().min(1).max(128).optional().describe("URL slug unique per creator"),
+  slug: optionalFormSlugModel.describe("URL slug unique per creator"),
   themeId: z.string().max(64).nullable().optional().describe("Preset theme id"),
   thankYouMessage: z
     .string()

@@ -45,13 +45,7 @@ export function CreateFormForm() {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit((values) => {
-              const slug = values.slug?.trim();
-              createForm.mutate(
-                createFormInputModel.parse({
-                  ...values,
-                  slug: slug ? slug : undefined,
-                }),
-              );
+              createForm.mutate(createFormInputModel.parse(values));
             })}
             className="space-y-4"
           >
