@@ -1,135 +1,163 @@
-# Turborepo starter
+# HoliForm
 
-This Turborepo starter is maintained by the Turborepo core team.
+Typeform-style form builder — creators sign up, build forms, publish shareable links, and review responses. Respondents fill forms **without logging in**.
 
-## Using this example
+**Live demo**
 
-Run the following command:
+| App | URL |
+| --- | --- |
+| Web | https://holiform.vercel.app |
+| API | https://holiform-api.onrender.com |
+| API docs (Scalar) | https://holiform-api.onrender.com/docs |
+| tRPC | https://holiform-api.onrender.com/trpc |
 
-```sh
-npx create-turbo@latest
+---
+
+## Demo credentials (after seed)
+
+Run `pnpm db:seed` against your database, then log in:
+
+| Field | Value |
+| --- | --- |
+| Email | `demo@holiform.app` |
+| Password | `DemoForm123!` |
+
+**Seeded content**
+
+- 3 **public** published forms (explore + home featured)
+- 1 **unlisted** form (direct link only)
+- Sample responses per form for analytics
+
+**Example public link:** `/f/holiform_demo/holi-festival-feedback`
+
+---
+
+## Stack
+
+- **Monorepo:** Turborepo + pnpm
+- **Web:** Next.js 16 (`apps/web`) — TanStack Query v5, shadcn/ui
+- **API:** Express 5 (`apps/api`) — tRPC, OpenAPI → Scalar
+- **DB:** PostgreSQL + Drizzle (`packages/database`)
+- **Jobs:** Inngest (OTP + response emails)
+- **Email:** Resend
+
+---
+
+## Local development
+
+### Prerequisites
+
+- Node 18+
+- pnpm 9
+- PostgreSQL (or [Neon](https://neon.tech) URL in `.env`)
+
+### 1. Install
+
+```bash
+pnpm install
 ```
 
-## What's inside?
+### 2. Environment
 
-This Turborepo includes the following packages/apps:
+Copy `.env.example` to `.env` at the repo root and fill in:
 
-### Apps and Packages
+- `DATABASE_URL` — Postgres connection string
+- `JWT_SECRET` — long random string
+- `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `RESEND_FROM_NAME`
+- `WEB_APP_URL=http://localhost:3000`
+- `INNGEST_DEV=1` for local Inngest dev server
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+For the web app (optional in `.env` or Vercel):
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+- `NEXT_PUBLIC_API_URL=http://localhost:8000/trpc`
+- `NEXT_PUBLIC_SITE_URL=http://localhost:3000`
 
-### Utilities
+### 3. Database
 
-This Turborepo has some additional tools already setup for you:
+You run migrations yourself:
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+```bash
+pnpm db:migrate
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+Optional demo data:
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+```bash
+pnpm db:seed
 ```
 
-### Develop
+### 4. Run
 
-To develop all apps and packages, run the following command:
+Terminal 1 — API + web:
 
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+```bash
+pnpm dev
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+Terminal 2 — Inngest (emails / OTP locally):
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+```bash
+pnpm dev:inngest
 ```
 
-### Remote Caching
+- Web: http://localhost:3000  
+- API: http://localhost:8000  
+- Scalar: http://localhost:8000/docs  
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+---
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+## Production deployment (summary)
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+**API (Render / Railway)** — root directory = repo root:
 
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+```bash
+pnpm install --frozen-lockfile && pnpm --filter @repo/api build
+pnpm --filter @repo/api start
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+Health check: `/health` · Inngest: `/api/inngest`
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+**Web (Vercel)** — project `apps/web` or monorepo with filter:
+
+- `NEXT_PUBLIC_API_URL=https://<api-host>/trpc`
+- `NEXT_PUBLIC_SITE_URL=https://<vercel-host>`
+
+**API env (prod):** `NODE_ENV=prod`, `BASE_URL`, `WEB_APP_URL`, `DATABASE_URL`, `JWT_SECRET`, Resend keys, `INNGEST_SIGNING_KEY`, `INNGEST_EVENT_KEY` (do **not** set `INNGEST_DEV`).
+
+**Neon:** Prefer the **pooled** connection string for the API; direct URL is fine for migrations.
+
+---
+
+## Scripts
+
+| Command | Description |
+| --- | --- |
+| `pnpm dev` | Web + API (turbo) |
+| `pnpm dev:inngest` | Inngest dev server → `http://localhost:8000/api/inngest` |
+| `pnpm build` | Build all |
+| `pnpm db:migrate` | Apply Drizzle migrations |
+| `pnpm db:seed` | Demo user + forms + responses (idempotent) |
+| `pnpm db:generate` | Generate migrations (you run when schema changes) |
+
+---
+
+## Project layout
 
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+apps/
+  api/          Express + tRPC + Inngest serve
+  web/          Next.js dashboard + public fill
+packages/
+  database/     Drizzle schema + migrations + seed
+  trpc/         Routers + context
+  services/     Business logic
+  validators/   Zod models (single source of truth)
+  inngest/      Background functions
+  email/        Resend templates
 ```
 
-## Useful Links
+---
 
-Learn more about the power of Turborepo:
+## License
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+Private / hackathon project.
