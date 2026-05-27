@@ -198,7 +198,7 @@ function FieldEditorDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl border-border/70 bg-background/70 shadow-xl backdrop-blur-xl sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl border-border bg-background shadow-xl sm:max-w-lg">
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-1 opacity-70"
           style={{
