@@ -1,5 +1,6 @@
 import type {
   ArchiveFormInput,
+  AiFormChatMessage,
   CloneFormInput,
   CreateFormInput,
   DeleteFormFieldInput,
@@ -30,6 +31,7 @@ import type {
   VerifyFormAccessOutput,
 } from "@repo/validators/forms";
 
+import * as aiFormBuilderDomain from "./aiFormBuilder";
 import * as formDomain from "./form";
 import * as formFieldDomain from "./formField";
 import * as publicDomain from "./public";
@@ -119,6 +121,14 @@ class FormService {
 
   listFormThemes() {
     return themesDomain.listFormThemes();
+  }
+
+  createFormFromPrompt(userId: string, messages: AiFormChatMessage[]) {
+    return aiFormBuilderDomain.createFormFromPrompt(userId, messages);
+  }
+
+  editFormFromPrompt(userId: string, formId: string, messages: AiFormChatMessage[]) {
+    return aiFormBuilderDomain.editFormFromPrompt(userId, formId, messages);
   }
 }
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { FormsList } from "~/components/dashboard/forms-list";
 import { Button } from "~/components/ui/button";
 import { HOLI } from "~/components/auth/holi/holi-colors";
@@ -14,16 +14,24 @@ export default function DashboardPage() {
             Build, publish, and share your forms.
           </p>
         </div>
-        <Button
-          asChild
-          className="h-11 w-full shrink-0 border-0 font-semibold text-white shadow-md sm:h-10 sm:w-auto"
-          style={{ background: `linear-gradient(135deg, ${HOLI.pink}, ${HOLI.orange})` }}
-        >
-          <Link href="/dashboard/forms/new">
-            <Plus className="size-4" />
-            New form
-          </Link>
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Button
+            asChild
+            className="h-11 w-full border-0 font-semibold text-white shadow-md sm:h-10 sm:w-auto"
+            style={{ background: `linear-gradient(135deg, ${HOLI.pink}, ${HOLI.orange})` }}
+          >
+            <Link href="/dashboard/forms/ai">
+              <Sparkles className="size-4" />
+              Create with AI
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="h-11 w-full sm:h-10 sm:w-auto">
+            <Link href="/dashboard/forms/new">
+              <Plus className="size-4" />
+              Manual form
+            </Link>
+          </Button>
+        </div>
       </div>
       <FormsList />
     </div>

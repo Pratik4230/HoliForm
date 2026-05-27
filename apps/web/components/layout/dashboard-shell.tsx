@@ -10,6 +10,7 @@ import {
   LogOut,
   Plus,
   Settings,
+  Sparkles,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -36,6 +37,7 @@ import { cn } from "~/lib/utils";
 
 const creatorMenuItems = [
   { href: "/dashboard", label: "My forms", icon: LayoutDashboard },
+  { href: "/dashboard/forms/ai", label: "AI builder", icon: Sparkles },
   { href: "/dashboard/forms/new", label: "New form", icon: Plus },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];

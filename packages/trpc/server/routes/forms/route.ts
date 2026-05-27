@@ -4,6 +4,9 @@ import { mapServiceError } from "../../utils/map-service-error";
 import { protectedOpenApiMeta, publicOpenApiMeta } from "../../utils/openapi-meta";
 import { generatePath } from "../../utils/path-generator";
 import {
+  aiCreateFormFromPromptInputModel,
+  aiEditFormFromPromptInputModel,
+  aiFormBuilderOutputModel,
   archiveFormInputModel,
   cloneFormInputModel,
   createFormInputModel,
@@ -41,6 +44,30 @@ const TAGS = ["Forms"];
 const getPath = generatePath("/forms");
 
 export const formsRouter = router({
+  aiCreateFormFromPrompt: protectedProcedure
+    .meta(protectedOpenApiMeta("POST", getPath("/aiCreateFormFromPrompt"), TAGS))
+    .input(aiCreateFormFromPromptInputModel)
+    .output(aiFormBuilderOutputModel)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await formService.createFormFromPrompt(ctx.user.id, input.messages);
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+
+  aiEditFormFromPrompt: protectedProcedure
+    .meta(protectedOpenApiMeta("POST", getPath("/aiEditFormFromPrompt"), TAGS))
+    .input(aiEditFormFromPromptInputModel)
+    .output(aiFormBuilderOutputModel)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await formService.editFormFromPrompt(ctx.user.id, input.formId, input.messages);
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+
   createForm: protectedProcedure
     .meta(protectedOpenApiMeta("POST", getPath("/createForm"), TAGS))
     .input(createFormInputModel)

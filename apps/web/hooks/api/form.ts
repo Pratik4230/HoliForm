@@ -54,6 +54,38 @@ export function useListFormThemes() {
 
 // ——— Creator mutations ———
 
+export function useAiCreateFormFromPrompt() {
+  const utils = useFormsUtils();
+
+  return trpc.forms.aiCreateFormFromPrompt.useMutation({
+    onSuccess: async (result) => {
+      await Promise.all([
+        utils.forms.listForms.invalidate(),
+        utils.forms.getFormById.invalidate({ formId: result.formId }),
+      ]);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to generate form");
+    },
+  });
+}
+
+export function useAiEditFormFromPrompt() {
+  const utils = useFormsUtils();
+
+  return trpc.forms.aiEditFormFromPrompt.useMutation({
+    onSuccess: async (result) => {
+      await Promise.all([
+        utils.forms.listForms.invalidate(),
+        utils.forms.getFormById.invalidate({ formId: result.formId }),
+      ]);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update form");
+    },
+  });
+}
+
 export function useCreateForm(options?: {
   onSuccess?: (created: FormRecord) => void | Promise<void>;
 }) {

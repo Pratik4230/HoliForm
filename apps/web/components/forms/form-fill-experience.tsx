@@ -370,11 +370,9 @@ export function FormFillExperience({
             theme ? ({ ["--primary" as string]: theme.primaryColor } as CSSProperties) : undefined
           }
         />
-        {mode === "live" ? (
-          <p className="text-muted-foreground text-xs">
-            Press Enter to continue · Arrow keys to move between steps
-          </p>
-        ) : null}
+        <p className="text-muted-foreground text-xs">
+          Press Enter to continue · Arrow keys to move between steps
+        </p>
       </div>
 
       <Card
